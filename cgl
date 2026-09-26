@@ -26,6 +26,7 @@ Usage:
   cgl autoupdate
   cgl autoupdate on
   cgl autoupdate off
+  cgl hello
 
 Supported system package managers:
   apt, dnf, yum, pacman, zypper, apk
@@ -114,6 +115,10 @@ autoupdate_status() {
   fi
 }
 
+hello() {
+  printf '%s\n' "Hello World!"
+}
+
 autoupdate_on() {
   if [ "$(id -u)" -eq 0 ]; then
     cat > /etc/cron.daily/cgl-autoupdate <<'EOF'
@@ -199,6 +204,9 @@ install)
   pm="$(detect_pm)"
   pm_update "$pm"
   pm_install "$pm" "$2"
+  ;;
+hello)
+  hello
   ;;
 remove)
   [ "$#" -eq 2 ] || die 'usage: cgl remove <package>'
