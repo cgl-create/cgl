@@ -10,6 +10,11 @@ sudo echo"Update Script Required Sudo Authentication Succesful"
 clear
 echo "CGL+ LabZ | Updating Your RPiOS"
 echo ""
+echo "Updating CGL+ Cmd"
+echo ""
+sudo apt update
+sudo apt upgrade cgl
+echo ""
 echo "Updating Package Index"
 echo ""
 sudo apt-get update -y
