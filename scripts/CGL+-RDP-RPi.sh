@@ -1,7 +1,9 @@
 #!/bin/sh
 set -eu
 SCRIPT_DIR="$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)"
+# Accept both internal action names and the public CLI spellings.
 ACTION="${1:-install}"
+ACTION="${ACTION#-}"
 WEB="$SCRIPT_DIR/CGL+-RDP-Web.sh"
 
 as_root() {
@@ -23,9 +25,7 @@ remove_rdp() {
 }
 
 case "$ACTION" in
-  install)
-    exec "$WEB" "Raspberry Pi OS"
-    ;;
+  install) exec "$WEB" "Raspberry Pi OS" ;;
   revoke)
     printf '%s\n' "CGL+ LabZ | Revoking RDP..."
     remove_rdp
@@ -42,9 +42,7 @@ case "$ACTION" in
     printf '%s\n' "CGL+ LabZ | Fixing RDP while preserving configuration..."
     SAVED="$(mktemp)"
     trap 'rm -f "$SAVED"' EXIT
-    if [ -f /etc/wayvnc/config ]; then
-      as_root cp /etc/wayvnc/config "$SAVED"
-    fi
+    if [ -f /etc/wayvnc/config ]; then as_root cp /etc/wayvnc/config "$SAVED"; fi
     remove_rdp
     "$WEB" "Raspberry Pi OS"
     if [ -s "$SAVED" ]; then
@@ -54,8 +52,5 @@ case "$ACTION" in
     printf '%s\n' "CGL+: Existing WayVNC configuration preserved."
     printf '%s\n' "CGL+: Linux/PAM passwords are not stored in plaintext by CGL+."
     ;;
-  *)
-    printf '%s\n' "CGL+: unknown RDP action: $ACTION" >&2
-    exit 2
-    ;;
+  *) printf '%s\n' "CGL+: unknown RDP action: $ACTION" >&2; exit 2 ;;
 esac
