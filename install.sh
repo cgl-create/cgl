@@ -28,11 +28,16 @@ ACTUAL_FINGERPRINT="$(gpg --show-keys --with-colons "$TMP" 2>/dev/null |
 [ "$ACTUAL_FINGERPRINT" = "$EXPECTED_FINGERPRINT" ] ||
   die "repository key fingerprint mismatch"
 
-gpg --dearmor < "$TMP" | sudo tee "$KEYRING" >/dev/null
-sudo chmod 0644 "$KEYRING"
-
-printf '%s\n' "deb [signed-by=$KEYRING] $REPO_URL stable main" |
-  sudo tee "$SOURCES" >/dev/null
+if [ "$(id -u)" -eq 0 ]; then
+  gpg --dearmor < "$TMP" > "$KEYRING"
+  chmod 0644 "$KEYRING"
+  printf '%s\n' "deb [signed-by=$KEYRING] $REPO_URL stable main" > "$SOURCES"
+else
+  command -v sudo >/dev/null 2>&1 || die "sudo is required when not running as root"
+  gpg --dearmor < "$TMP" | sudo tee "$KEYRING" >/dev/null
+  sudo chmod 0644 "$KEYRING"
+  printf '%s\n' "deb [signed-by=$KEYRING] $REPO_URL stable main" | sudo tee "$SOURCES" >/dev/null
+fi
 
 printf 'CGL+ APT repository configured successfully.\n'
 printf 'No package was installed.\n'
