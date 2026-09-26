@@ -14,7 +14,7 @@ fi
 
 usage() {
   cat <<'EOF'
-CGL+ universal Linux package and script manager
+CGL+ Cmd
 
 Usage:
   cgl version
@@ -24,14 +24,8 @@ Usage:
   cgl update -os rpi
   cgl update -os ubuntu
   cgl autoupdate
-  cgl autoupdate status
   cgl autoupdate on
   cgl autoupdate off
-  cgl install <package>
-  cgl remove <package>
-  cgl search <term>
-  cgl list
-  cgl doctor
 
 Supported system package managers:
   apt, dnf, yum, pacman, zypper, apk
