@@ -1,7 +1,16 @@
 #!/bin/sh
 set -eu
 CGL_VERSION="1.0.0"
-CGL_ROOT="/usr/share/cgl"
+
+# Debian packages install CGL under /usr/share/cgl. The bootstrap installer
+# uses /usr/local/share/cgl. Prefer the system location when present.
+if [ -d /usr/share/cgl ]; then
+  CGL_ROOT="/usr/share/cgl"
+elif [ -d /usr/local/share/cgl ]; then
+  CGL_ROOT="/usr/local/share/cgl"
+else
+  CGL_ROOT="/usr/local/share/cgl"
+fi
 
 usage() {
   cat <<'EOF'
@@ -23,8 +32,8 @@ Supported system package managers:
   apt, dnf, yum, pacman, zypper, apk
 EOF
 }
-die() { printf 'cgl: %s
-' "$*" >&2; exit 1; }
+die() { printf 'cgl: %s\n' "$*" >&2; exit 1; }
+
 as_root() {
   if [ "$(id -u)" -eq 0 ]; then
     "$@"
@@ -34,6 +43,7 @@ as_root() {
     die "root privileges are required (run as root or install sudo)"
   fi
 }
+
 detect_pm() {
   if command -v apt-get >/dev/null 2>&1; then printf 'apt\n'
   elif command -v dnf >/dev/null 2>&1; then printf 'dnf\n'
@@ -43,26 +53,29 @@ detect_pm() {
   elif command -v apk >/dev/null 2>&1; then printf 'apk\n'
   else die "no supported Linux package manager found"; fi
 }
+
 pm_update() {
   case "$1" in
     apt) as_root apt-get update ;;
     dnf) as_root dnf makecache ;;
     yum) as_root yum makecache ;;
-    pacman) as_root pacman -Sy ;;
+    pacman) as_root pacman -Syu --noconfirm ;;
     zypper) as_root zypper --non-interactive refresh ;;
     apk) as_root apk update ;;
   esac
 }
+
 pm_upgrade() {
   case "$1" in
     apt) as_root apt-get upgrade -y ;;
     dnf) as_root dnf upgrade -y ;;
     yum) as_root yum update -y ;;
-    pacman) as_root pacman -Su --noconfirm ;;
+    pacman) : ;; # pacman -Syu is already performed by pm_update.
     zypper) as_root zypper --non-interactive update ;;
     apk) as_root apk upgrade ;;
   esac
 }
+
 pm_install() {
   case "$1" in
     apt) as_root apt-get install -y "$2" ;;
@@ -73,6 +86,7 @@ pm_install() {
     apk) as_root apk add "$2" ;;
   esac
 }
+
 pm_remove() {
   case "$1" in
     apt) as_root apt-get remove -y "$2" ;;
@@ -83,6 +97,7 @@ pm_remove() {
     apk) as_root apk del "$2" ;;
   esac
 }
+
 pm_search() {
   case "$1" in
     apt) apt-cache search "$2" ;;
@@ -93,6 +108,7 @@ pm_search() {
     apk) apk search "$2" ;;
   esac
 }
+
 case "${1:-help}" in
 version|--version|-v) printf 'cgl %s\n' "$CGL_VERSION" ;;
 help|--help|-h) usage ;;
@@ -117,7 +133,9 @@ update)
   ;;
 install)
   [ "$#" -eq 2 ] || die 'usage: cgl install <package>'
-  pm="$(detect_pm)"; pm_update "$pm"; pm_install "$pm" "$2"
+  pm="$(detect_pm)"
+  pm_update "$pm"
+  pm_install "$pm" "$2"
   ;;
 remove)
   [ "$#" -eq 2 ] || die 'usage: cgl remove <package>'
@@ -128,7 +146,12 @@ search)
   pm_search "$(detect_pm)" "$2"
   ;;
 list)
-  find "$CGL_ROOT/scripts" -maxdepth 1 -type f -printf '%f\n' 2>/dev/null || true
+  if [ -d "$CGL_ROOT/scripts" ]; then
+    for path in "$CGL_ROOT/scripts/"*; do
+      [ -f "$path" ] || continue
+      basename "$path"
+    done
+  fi
   ;;
 doctor)
   pm="$(detect_pm 2>/dev/null || printf 'none')"
