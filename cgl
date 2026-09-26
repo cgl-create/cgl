@@ -25,6 +25,9 @@ Usage:
   cgl update -os ubuntu
   cgl update -pkg rdp -os -rpi
   cgl install rdp -os rpi
+  cgl install -revoke rdp -os rpi
+  cgl install -rst rdp -os rpi
+  cgl install -fix rdp -os rpi
   cgl install rdp -os ubuntu
   cgl autoupdate
   cgl autoupdate on
@@ -219,17 +222,23 @@ install)
       rpi)
         path="$CGL_ROOT/scripts/CGL+-RDP-RPi.sh"
         [ -f "$path" ] || die 'Raspberry Pi RDP setup script is not installed'
-        exec "$path"
+        exec "$path" install
         ;;
       ubuntu)
         path="$CGL_ROOT/scripts/CGL+-RDP-Ubuntu.sh"
         [ -f "$path" ] || die 'Ubuntu RDP setup script is not installed'
-        exec "$path"
+        exec "$path" install
         ;;
       *) die 'supported RDP targets: rpi, ubuntu' ;;
     esac
   fi
-  [ "$#" -eq 2 ] || die 'usage: cgl install <package> | cgl install rdp -os <rpi|ubuntu>'
+  if [ "$#" -eq 5 ] && [ "$3" = "rdp" ] && [ "$4" = "-os" ] && { [ "$2" = "-revoke" ] || [ "$2" = "-rst" ] || [ "$2" = "-fix" ]; }; then
+    [ "$5" = "rpi" ] || die 'RDP lifecycle actions currently support: rpi'
+    path="$CGL_ROOT/scripts/CGL+-RDP-RPi.sh"
+    [ -f "$path" ] || die 'Raspberry Pi RDP setup script is not installed'
+    exec "$path" "$2"
+  fi
+  [ "$#" -eq 2 ] || die 'usage: cgl install <package> | cgl install rdp -os <rpi|ubuntu> | cgl install <-revoke|-rst|-fix> rdp -os rpi'
   pm="$(detect_pm)"
   pm_update "$pm"
   pm_install "$pm" "$2"
