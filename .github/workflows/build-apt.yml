@@ -35,15 +35,24 @@ jobs:
           fi
 
           rm -rf public gnupg
-          mkdir -p public/pool/main/c/cgl public/dists/stable/main/binary-all gnupg
+          mkdir -p public/pool/main/c/cgl public/dists/stable/main/binary-all public/dists/stable/main/binary-amd64 public/dists/stable/main/binary-arm64 public/dists/stable/main/binary-armhf public/dists/stable/main/binary-i386 gnupg
           chmod 700 gnupg
           export GNUPGHOME="$PWD/gnupg"
 
           printf '%s\n' "$APT_GPG_PRIVATE_KEY" | gpg --batch --import
 
           cp dist/*.deb public/pool/main/c/cgl/
-          dpkg-scanpackages --arch all public/pool/main/c/cgl /dev/null > public/dists/stable/main/binary-all/Packages
+          (
+            cd public
+            dpkg-scanpackages --arch all pool/main/c/cgl /dev/null > dists/stable/main/binary-all/Packages
+          )
+          for arch in amd64 arm64 armhf i386; do
+            cp public/dists/stable/main/binary-all/Packages "public/dists/stable/main/binary-$arch/Packages"
+          done
           gzip -9c public/dists/stable/main/binary-all/Packages > public/dists/stable/main/binary-all/Packages.gz
+          for arch in amd64 arm64 armhf i386; do
+            gzip -9c "public/dists/stable/main/binary-$arch/Packages" > "public/dists/stable/main/binary-$arch/Packages.gz"
+          done
 
           cd public/dists/stable
           cat > Release <<EOF
@@ -51,7 +60,7 @@ jobs:
           Label: CGL+
           Suite: stable
           Codename: stable
-          Architectures: all
+          Architectures: amd64 arm64 armhf i386 all
           Components: main
           Description: CGL+ Debian package repository
           Date: $(date -Ru)
