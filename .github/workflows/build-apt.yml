@@ -122,6 +122,14 @@ jobs:
           test -s public/cgl-archive-keyring.asc
           test -s public/cgl-archive-keyring.gpg
 
+      - name: Verify repository files before Pages publish
+        run: |
+          set -eu
+          VERSION="$(sed -n 's/^Version: //p' package/DEBIAN/control | head -n1)"
+          test -f public/dists/stable/Release
+          test -f public/dists/stable/InRelease
+          test -f "public/pool/main/c/cgl/cgl_${VERSION}_all.deb"
+
       - name: Publish to GitHub Pages
         uses: peaceiris/actions-gh-pages@v4
         with:
