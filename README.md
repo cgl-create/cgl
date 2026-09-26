@@ -25,7 +25,7 @@ For a secure first-time setup, install the repository keyring and source configu
 
     git clone https://github.com/cgl-create/cgl.git
     cd cgl
-    sudo ./scripts/setup-apt.sh
+    sudo sh ./scripts/setup-apt.sh
 
 Then install CGL+ normally:
 
