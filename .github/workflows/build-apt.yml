@@ -35,7 +35,7 @@ jobs:
           fi
 
           rm -rf public gnupg
-          mkdir -p public/pool/main/c/cgl public/dists/stable/main/binary-all
+          mkdir -p public/pool/main/c/cgl public/dists/stable/main/binary-all gnupg
           chmod 700 gnupg
           export GNUPGHOME="$PWD/gnupg"
 
@@ -58,29 +58,30 @@ jobs:
           EOF
 
           {
-            echo "MD5Sum:"
-            find main -type f -print0 | sort -z | xargs -0 md5sum | sed 's#  #  #'
             echo "SHA256:"
-            find main -type f -print0 | sort -z | xargs -0 sha256sum
+            find main -type f -print0 | sort -z | while IFS= read -r -d '' file; do
+              hash="$(sha256sum "$file" | awk '{print $1}')"
+              size="$(wc -c < "$file" | tr -d ' ')"
+              printf " %s %s %s\n" "$hash" "$size" "$file"
+            done
           } >> Release
 
           KEY_ID="$(gpg --batch --with-colons --list-secret-keys | awk -F: '$1=="sec"{print $5; exit}')"
           [ -n "$KEY_ID" ] || { echo "No signing key imported." >&2; exit 1; }
 
           if [ -n "${APT_GPG_PASSPHRASE:-}" ]; then
-            GPG_ARGS="--pinentry-mode loopback --passphrase-fd 0"
-            printf '%s\n' "$APT_GPG_PASSPHRASE" | gpg --batch $GPG_ARGS --local-user "$KEY_ID" --clearsign --output InRelease Release
-            printf '%s\n' "$APT_GPG_PASSPHRASE" | gpg --batch $GPG_ARGS --local-user "$KEY_ID" --detach-sign --armor --output Release.gpg Release
+            printf '%s\n' "$APT_GPG_PASSPHRASE" | gpg --batch --pinentry-mode loopback --passphrase-fd 0 --local-user "$KEY_ID" --clearsign --output InRelease Release
+            printf '%s\n' "$APT_GPG_PASSPHRASE" | gpg --batch --pinentry-mode loopback --passphrase-fd 0 --local-user "$KEY_ID" --detach-sign --armor --output Release.gpg Release
           else
             gpg --batch --yes --local-user "$KEY_ID" --clearsign --output InRelease Release
             gpg --batch --yes --local-user "$KEY_ID" --detach-sign --armor --output Release.gpg Release
           fi
 
-          gpg --batch --export --armor "$KEY_ID" > ../../../../cgl-archive-keyring.asc
-          gpg --batch --export "$KEY_ID" > ../../../../cgl-archive-keyring.gpg
-          cd ../../../..
-          test -s cgl-archive-keyring.asc
-          test -s cgl-archive-keyring.gpg
+          cd ../../..
+          gpg --batch --export --armor "$KEY_ID" > public/cgl-archive-keyring.asc
+          gpg --batch --export "$KEY_ID" > public/cgl-archive-keyring.gpg
+          test -s public/cgl-archive-keyring.asc
+          test -s public/cgl-archive-keyring.gpg
 
       - name: Publish to GitHub Pages
         uses: peaceiris/actions-gh-pages@v4
