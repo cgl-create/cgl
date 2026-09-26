@@ -71,16 +71,41 @@ CGL then delegates package operations to the host's native package manager.
     cgl update
     cgl update -os rpi
     cgl update -os ubuntu
-  cgl install rdp -os rpi
-  cgl install rdp -os ubuntu
-  cgl autoupdate
-  cgl autoupdate on
-  cgl autoupdate off
+    cgl install rdp -os rpi
+    cgl install rdp -os ubuntu
+    cgl autoupdate
+    cgl autoupdate on
+    cgl autoupdate off
     cgl install <package>
     cgl remove <package>
     cgl search <term>
     cgl list
     cgl doctor
+
+## CGL+ Browser RDP
+
+Install the remote desktop gateway with:
+
+    sudo cgl install rdp -os rpi
+
+or:
+
+    sudo cgl install rdp -os ubuntu
+
+The RDP setup now provides both:
+
+- Native RDP through `xrdp` on port `3389`
+- A CGL+-skinned browser remote desktop through noVNC on port `1350`
+
+The installer also enables Avahi so the browser can normally reach the machine using its mDNS hostname:
+
+    http://<hostname>.local:1350
+
+The CGL+ browser screen has a custom CGL+ login page. It asks for a Linux username and password and passes those credentials to the VNC authentication layer. The remote session uses an XFCE virtual desktop.
+
+The browser gateway uses noVNC and websockify, while TigerVNC provides the virtual display. The VNC server is kept on localhost and websockify exposes the browser gateway on port 1350.
+
+Port 1350 is intended for a trusted LAN in this configuration. The browser gateway is HTTP/WebSocket by default, so HTTPS/WSS should be added before exposing it outside a trusted network.
 
 ## Design
 
