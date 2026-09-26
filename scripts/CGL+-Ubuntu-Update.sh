@@ -1,67 +1,43 @@
-#!/bin/sh
-set -eu
-
 clear
-printf '%s\n' "CGL+ LabZ | Ubuntu Update Sequence Initiated"
-printf '%s\n\n' "Preparing your Ubuntu system..."
-
-as_root() {
-  if [ "$(id -u)" -eq 0 ]; then
-    "$@"
-  elif command -v sudo >/dev/null 2>&1; then
-    sudo "$@"
-  else
-    printf '%s\n' "CGL+: root privileges are required." >&2
-    exit 1
-  fi
-}
-
-printf '%s\n' "[1/7] Updating package index..."
-as_root apt-get update
-printf '%s\n\n' "Package index updated."
-
-printf '%s\n' "[2/7] Installing Neofetch..."
-as_root apt-get install -y neofetch
-
-printf '%s\n' "[3/7] Installing Curl..."
-as_root apt-get install -y curl
-
-printf '%s\n' "[4/7] Upgrading Ubuntu..."
-as_root apt-get upgrade -y
-
-printf '%s\n' "[5/7] Removing unused packages..."
-as_root apt-get autoremove -y
-
-printf '%s\n' "[6/7] Cleaning APT cache..."
-as_root apt-get autoclean
-
-printf '%s\n' "[7/7] Installing/Updating Speedtest CLI..."
-if ! command -v speedtest >/dev/null 2>&1; then
-  if command -v curl >/dev/null 2>&1; then
-    tmp_script="$(mktemp)"
-    trap 'rm -f "$tmp_script"' EXIT HUP INT TERM
-    curl -fsSL --proto '=https' --tlsv1.2 https://packagecloud.io/install/repositories/ookla/speedtest-cli/script.deb.sh -o "$tmp_script"
-    if command -v bash >/dev/null 2>&1; then
-      as_root bash "$tmp_script"
-    else
-      printf '%s\n' "CGL+: bash is required by the Speedtest repository installer." >&2
-      exit 1
-    fi
-  else
-    printf '%s\n' "CGL+: curl is required to install Speedtest CLI." >&2
-    exit 1
-  fi
-fi
-as_root apt-get install -y speedtest
-
-printf '\n%s\n' "CGL+ LabZ | System Information"
-if command -v neofetch >/dev/null 2>&1; then
-  neofetch
-fi
-
-printf '\n%s\n' "CGL+ LabZ | Internet Speed Test"
-if command -v speedtest >/dev/null 2>&1; then
-  speedtest
-fi
-
-printf '\n%s\n' "CGL+ LabZ | Your Ubuntu System Is Now Updated"
+sudo killall -9 dpkg apt apt-get
+clear
+echo "CGL+ LabZ | Ubuntu Update Sequence Intiated"
+echo ""
+echo "Please Enable Sudo Access"
+echo "Please Enter You Password"
+echo ""
+sudo echo"Update Script Required Sudo Authentication Succesful"
+clear
+echo "CGL+ LabZ | Updating Ubuntu"
+echo ""
+echo "Updating Package Index"
+echo ""
+sudo apt-get update -y
+echo ""
+echo "Installing Neowofetch"
+echo ""
+sudo apt install neowofetch -y
+echo ""
+echo "Running Neowofetch | System Get Details"
+echo ""
+neowofetch
+echo ""
+echo "Making Upgrades..."
+echo ""
+sudo apt upgrade -y
+echo ""
+echo "Installing Curl"
+echo ""
+sudo apt-get install curl
+echo ""
+echo "Installing SpeedTest CLi"
+echo ""
+curl -s https://packagecloud.io/install/repositories/ookla/speedtest-cli/script.deb.sh | sudo os=debian dist=bookworm bash
+sudo apt-get install speedtest -y
+echo ""
+echo "Finnished!"
+clear
+neowofetch
+speedtest
+echo ""
+echo "CGL+ LabZ | Ubuntu Is Now Updated"
