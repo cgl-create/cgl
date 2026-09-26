@@ -8,6 +8,13 @@ on:
 permissions:
   contents: write
 
+# Only one APT repository publisher may update gh-pages at a time.
+# Without this, two pushes to main can race and one Pages push can be rejected
+# because the gh-pages ref changed while the publisher was preparing its commit.
+concurrency:
+  group: cgl-apt-pages-publish
+  cancel-in-progress: false
+
 jobs:
   build:
     runs-on: ubuntu-latest
