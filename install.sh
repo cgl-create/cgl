@@ -1,35 +1,39 @@
 #!/bin/sh
 set -eu
 
-# Universal bootstrap installer for Linux. This installs the CGL+ CLI and
-# bundled scripts directly, so CGL can be bootstrapped before an APT package
-# repository is configured.
-INSTALL_DIR="${CGL_INSTALL_DIR:-/usr/local/bin}"
-SHARE_DIR="${CGL_SHARE_DIR:-/usr/local/share/cgl}"
-ROOT="$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)"
-TARGET="$INSTALL_DIR/cgl"
+REPO_URL="https://packages.crazygamelabs.co.uk"
+KEY_URL="$REPO_URL/cgl-archive-keyring.gpg"
+KEYRING="/usr/share/keyrings/cgl-archive-keyring.gpg"
+SOURCES="/etc/apt/sources.list.d/cgl.list"
+EXPECTED_FINGERPRINT="60B4D386243F10FBAA2B95C0D2EC0C12FD8D39CC"
 
-[ "$(uname -s)" = "Linux" ] || { echo "CGL+: Linux is required." >&2; exit 1; }
-
-install_files() {
-  mkdir -p "$INSTALL_DIR" "$SHARE_DIR/scripts"
-  cp "$ROOT/cgl" "$TARGET"
-  cp "$ROOT/scripts/CGL+-RPiOS-Update.sh" "$SHARE_DIR/scripts/CGL+-RPiOS-Update.sh"
-  chmod 0755 "$TARGET" "$SHARE_DIR/scripts/CGL+-RPiOS-Update.sh"
+die() {
+  printf 'CGL+ installer: %s\n' "$*" >&2
+  exit 1
 }
 
-if [ "$(id -u)" -eq 0 ]; then
-  install_files
-else
-  command -v sudo >/dev/null 2>&1 || { echo "CGL+: sudo is required when not running as root." >&2; exit 1; }
-  sudo sh -c '
-    set -eu
-    mkdir -p "$1" "$2/scripts"
-    cp "$3/cgl" "$1/cgl"
-    cp "$3/scripts/CGL+-RPiOS-Update.sh" "$2/scripts/CGL+-RPiOS-Update.sh"
-    chmod 0755 "$1/cgl" "$2/scripts/CGL+-RPiOS-Update.sh"
-  ' sh "$INSTALL_DIR" "$SHARE_DIR" "$ROOT"
-fi
+command -v apt-get >/dev/null 2>&1 || die "apt-get is required"
+command -v curl >/dev/null 2>&1 || die "curl is required"
+command -v gpg >/dev/null 2>&1 || die "gpg is required"
 
-printf 'CGL+ installed to %s\n' "$TARGET"
-printf 'Run: cgl doctor\n'
+TMP="$(mktemp)"
+trap 'rm -f "$TMP"' EXIT HUP INT TERM
+
+printf 'Downloading CGL+ repository key...\n'
+curl -fsSL --proto '=https' --tlsv1.2 "$KEY_URL" -o "$TMP"
+
+ACTUAL_FINGERPRINT="$(gpg --show-keys --with-colons "$TMP" 2>/dev/null |
+  awk -F: '$1=="fpr" {print toupper($10); exit}')"
+
+[ "$ACTUAL_FINGERPRINT" = "$EXPECTED_FINGERPRINT" ] ||
+  die "repository key fingerprint mismatch"
+
+gpg --dearmor < "$TMP" | sudo tee "$KEYRING" >/dev/null
+sudo chmod 0644 "$KEYRING"
+
+printf '%s\n' "deb [signed-by=$KEYRING] $REPO_URL stable main" |
+  sudo tee "$SOURCES" >/dev/null
+
+printf 'CGL+ APT repository configured successfully.\n'
+printf 'No package was installed.\n'
+printf 'Run: sudo apt update && sudo apt install cgl\n'
