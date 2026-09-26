@@ -2,16 +2,137 @@
 set -eu
 CGL_VERSION="1.0.0"
 CGL_ROOT="/usr/share/cgl"
-usage() { printf '%s\n' 'CGL+ package and script manager' '' 'Usage:' '  cgl version' '  cgl help' '  cgl run <script>' '  cgl update' '  cgl update -os rpi' '  cgl install <package>' '  cgl remove <package>' '  cgl search <term>' '  cgl list' '  cgl doctor'; }
-die() { printf 'cgl: %s\n' "$*" >&2; exit 1; }
+
+usage() {
+  cat <<'EOF'
+CGL+ universal Linux package and script manager
+
+Usage:
+  cgl version
+  cgl help
+  cgl run <script>
+  cgl update
+  cgl update -os rpi
+  cgl install <package>
+  cgl remove <package>
+  cgl search <term>
+  cgl list
+  cgl doctor
+
+Supported system package managers:
+  apt, dnf, yum, pacman, zypper, apk
+EOF
+}
+die() { printf 'cgl: %s
+' "$*" >&2; exit 1; }
+as_root() {
+  if [ "$(id -u)" -eq 0 ]; then
+    "$@"
+  elif command -v sudo >/dev/null 2>&1; then
+    sudo "$@"
+  else
+    die "root privileges are required (run as root or install sudo)"
+  fi
+}
+detect_pm() {
+  if command -v apt-get >/dev/null 2>&1; then printf 'apt\n'
+  elif command -v dnf >/dev/null 2>&1; then printf 'dnf\n'
+  elif command -v yum >/dev/null 2>&1; then printf 'yum\n'
+  elif command -v pacman >/dev/null 2>&1; then printf 'pacman\n'
+  elif command -v zypper >/dev/null 2>&1; then printf 'zypper\n'
+  elif command -v apk >/dev/null 2>&1; then printf 'apk\n'
+  else die "no supported Linux package manager found"; fi
+}
+pm_update() {
+  case "$1" in
+    apt) as_root apt-get update ;;
+    dnf) as_root dnf makecache ;;
+    yum) as_root yum makecache ;;
+    pacman) as_root pacman -Sy ;;
+    zypper) as_root zypper --non-interactive refresh ;;
+    apk) as_root apk update ;;
+  esac
+}
+pm_upgrade() {
+  case "$1" in
+    apt) as_root apt-get upgrade -y ;;
+    dnf) as_root dnf upgrade -y ;;
+    yum) as_root yum update -y ;;
+    pacman) as_root pacman -Su --noconfirm ;;
+    zypper) as_root zypper --non-interactive update ;;
+    apk) as_root apk upgrade ;;
+  esac
+}
+pm_install() {
+  case "$1" in
+    apt) as_root apt-get install -y "$2" ;;
+    dnf) as_root dnf install -y "$2" ;;
+    yum) as_root yum install -y "$2" ;;
+    pacman) as_root pacman -S --noconfirm "$2" ;;
+    zypper) as_root zypper --non-interactive install "$2" ;;
+    apk) as_root apk add "$2" ;;
+  esac
+}
+pm_remove() {
+  case "$1" in
+    apt) as_root apt-get remove -y "$2" ;;
+    dnf) as_root dnf remove -y "$2" ;;
+    yum) as_root yum remove -y "$2" ;;
+    pacman) as_root pacman -R --noconfirm "$2" ;;
+    zypper) as_root zypper --non-interactive remove "$2" ;;
+    apk) as_root apk del "$2" ;;
+  esac
+}
+pm_search() {
+  case "$1" in
+    apt) apt-cache search "$2" ;;
+    dnf) dnf search "$2" ;;
+    yum) yum search "$2" ;;
+    pacman) pacman -Ss "$2" ;;
+    zypper) zypper search "$2" ;;
+    apk) apk search "$2" ;;
+  esac
+}
 case "${1:-help}" in
 version|--version|-v) printf 'cgl %s\n' "$CGL_VERSION" ;;
 help|--help|-h) usage ;;
-run) [ "$#" -ge 2 ] || die 'usage: cgl run <script>'; script="$2"; case "$script" in */*) path="$script";; *) path="$CGL_ROOT/scripts/$script";; esac; [ -f "$path" ] || die "script not found: $script"; [ -x "$path" ] || chmod +x "$path"; shift 2; exec "$path" "$@" ;;
-update) if [ "${2:-}" = '-os' ] && [ "${3:-}" = 'rpi' ]; then path="$CGL_ROOT/scripts/CGL+-RPiOS-Update.sh"; [ -f "$path" ] || die 'RPi update script is not installed'; exec "$path"; fi; sudo apt-get update; sudo apt-get upgrade -y ;;
-install) [ "$#" -eq 2 ] || die 'usage: cgl install <package>'; sudo apt-get update; sudo apt-get install -y "$2" ;;
-remove) [ "$#" -eq 2 ] || die 'usage: cgl remove <package>'; sudo apt-get remove -y "$2" ;;
-search) [ "$#" -eq 2 ] || die 'usage: cgl search <term>'; apt-cache search "$2" ;;
-list) find "$CGL_ROOT/scripts" -maxdepth 1 -type f -printf '%f\n' 2>/dev/null || true ;;
-doctor) printf 'CGL+ doctor\nVersion: %s\nRoot: %s\n' "$CGL_VERSION" "$CGL_ROOT"; command -v apt-get >/dev/null 2>&1 && printf 'APT: available\n' || printf 'APT: missing\n' ;;
-*) die "unknown command '$1'; run 'cgl help'";; esac
+run)
+  [ "$#" -ge 2 ] || die 'usage: cgl run <script>'
+  script="$2"
+  case "$script" in */*) path="$script" ;; *) path="$CGL_ROOT/scripts/$script" ;; esac
+  [ -f "$path" ] || die "script not found: $script"
+  [ -x "$path" ] || chmod +x "$path"
+  shift 2
+  exec "$path" "$@"
+  ;;
+update)
+  pm="$(detect_pm)"
+  if [ "${2:-}" = '-os' ] && [ "${3:-}" = 'rpi' ]; then
+    path="$CGL_ROOT/scripts/CGL+-RPiOS-Update.sh"
+    [ -f "$path" ] || die 'RPi update script is not installed'
+    exec "$path"
+  fi
+  pm_update "$pm"
+  pm_upgrade "$pm"
+  ;;
+install)
+  [ "$#" -eq 2 ] || die 'usage: cgl install <package>'
+  pm="$(detect_pm)"; pm_update "$pm"; pm_install "$pm" "$2"
+  ;;
+remove)
+  [ "$#" -eq 2 ] || die 'usage: cgl remove <package>'
+  pm_remove "$(detect_pm)" "$2"
+  ;;
+search)
+  [ "$#" -eq 2 ] || die 'usage: cgl search <term>'
+  pm_search "$(detect_pm)" "$2"
+  ;;
+list)
+  find "$CGL_ROOT/scripts" -maxdepth 1 -type f -printf '%f\n' 2>/dev/null || true
+  ;;
+doctor)
+  pm="$(detect_pm 2>/dev/null || printf 'none')"
+  printf 'CGL+ doctor\nVersion: %s\nRoot: %s\nPackage manager: %s\n' "$CGL_VERSION" "$CGL_ROOT" "$pm"
+  ;;
+*) die "unknown command '$1'; run 'cgl help'" ;;
+esac
