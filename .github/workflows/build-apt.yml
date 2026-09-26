@@ -34,6 +34,11 @@ jobs:
             exit 1
           fi
 
+          VERSION="$(sed -n 's/^Version: //p' package/DEBIAN/control | head -n1)"
+          DEB="dist/cgl_${VERSION}_all.deb"
+
+          test -f "$DEB"
+
           rm -rf public gnupg
           mkdir -p \
             public/pool/main/c/cgl \
@@ -50,11 +55,11 @@ jobs:
           printf '%s\n' "$APT_GPG_PRIVATE_KEY" | gpg --batch --import
 
           # Canonical package path.
-          cp dist/*.deb public/pool/main/c/cgl/
+          cp "$DEB" public/pool/main/c/cgl/
 
-          # Backward-compatible alias for clients that cached the old
-          # metadata, which referenced /public/pool/... on the site.
-          cp public/pool/main/c/cgl/*.deb public/public/pool/main/c/cgl/
+          # Backward-compatible alias for clients that cached old metadata
+          # containing /public/pool/... in the Filename field.
+          cp "$DEB" public/public/pool/main/c/cgl/
 
           (
             cd public
@@ -70,15 +75,14 @@ jobs:
             gzip -9c "public/dists/stable/main/binary-$arch/Packages" > "public/dists/stable/main/binary-$arch/Packages.gz"
           done
 
-          # Fail the build if repository metadata accidentally regresses
-          # to the old "public/pool/..." filename.
+          # Prevent a regression to the invalid public/pool Filename.
           if grep -R '^Filename: public/' public/dists/stable/main; then
             echo "ERROR: APT metadata contains an invalid public/ package path." >&2
             exit 1
           fi
 
-          test -f public/pool/main/c/cgl/cgl_1.0.0_all.deb
-          test -f public/public/pool/main/c/cgl/cgl_1.0.0_all.deb
+          test -f "public/pool/main/c/cgl/cgl_${VERSION}_all.deb"
+          test -f "public/public/pool/main/c/cgl/cgl_${VERSION}_all.deb"
 
           cd public/dists/stable
           cat > Release <<EOF
