@@ -1,0 +1,47 @@
+name: Build CGL APT Repository
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build and test
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y dpkg-dev
+          chmod +x cgl scripts/*.sh
+          ./scripts/build-deb.sh
+          ./scripts/test.sh
+      - name: Build repository
+        run: |
+          rm -rf public
+          mkdir -p public/pool/main/c/cgl public/dists/stable/main/binary-all
+          cp dist/*.deb public/pool/main/c/cgl/
+          dpkg-scanpackages --arch all public/pool/main/c/cgl /dev/null > public/dists/stable/main/binary-all/Packages
+          gzip -9c public/dists/stable/main/binary-all/Packages > public/dists/stable/main/binary-all/Packages.gz
+          cat > public/dists/stable/Release <<EOF
+          Origin: CGL+
+          Label: CGL+
+          Suite: stable
+          Codename: stable
+          Architectures: all
+          Components: main
+          Description: CGL+ Debian package repository
+          Date: $(date -Ru)
+          EOF
+      - name: Publish to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_branch: gh-pages
+          publish_dir: ./public
+          force_orphan: true
+          commit_message: Publish CGL APT repository
