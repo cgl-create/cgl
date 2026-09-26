@@ -1,0 +1,4 @@
+#!/bin/sh
+set -e
+chmod 0755 /usr/bin/cgl /usr/share/cgl/cgl /usr/share/cgl/scripts/CGL+-RPiOS-Update.sh
+exit 0
