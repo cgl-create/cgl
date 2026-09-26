@@ -92,20 +92,21 @@ or:
 
     sudo cgl install rdp -os ubuntu
 
-The RDP setup now provides both:
+The RDP setup provides a CGL+-skinned browser remote desktop through noVNC on port `1350`.
 
-- Native RDP through `xrdp` on port `3389`
-- A CGL+-skinned browser remote desktop through noVNC on port `1350`
+The installer is designed for systems that already have a WayVNC session. It shares the **current Wayland desktop session** instead of creating another desktop. It does not install XFCE or TigerVNC.
 
 The installer also enables Avahi so the browser can normally reach the machine using its mDNS hostname:
 
     http://<hostname>.local:1350
 
-The CGL+ browser screen has a custom CGL+ login page. It asks for a Linux username and password and passes those credentials to the VNC authentication layer. The remote session uses an XFCE virtual desktop.
+The CGL+ browser screen has a custom CGL+ login page. It asks for the Linux username and password and passes those credentials to WayVNC's PAM authentication layer.
 
-The browser gateway uses noVNC and websockify, while TigerVNC provides the virtual display. The VNC server is kept on localhost and websockify exposes the browser gateway on port 1350.
+The browser gateway uses noVNC and websockify. WayVNC remains bound to localhost on port 5900, while websockify exposes the browser gateway on port 1350.
 
-Port 1350 is intended for a trusted LAN in this configuration. The browser gateway is HTTP/WebSocket by default, so HTTPS/WSS should be added before exposing it outside a trusted network.
+Port 1350 is intended for a trusted LAN in this configuration. The browser gateway is HTTP/WebSocket by default, while the VNC authentication channel uses WayVNC's TLS authentication. HTTPS/WSS should still be added before exposing the browser UI outside a trusted network.
+
+Note: WayVNC is intended for wlroots-based Wayland compositors.
 
 ## Design
 
