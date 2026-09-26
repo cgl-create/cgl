@@ -13,21 +13,40 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+
       - name: Build and test
         run: |
           sudo apt-get update
-          sudo apt-get install -y dpkg-dev
+          sudo apt-get install -y dpkg-dev gnupg
           chmod +x cgl scripts/*.sh
           ./scripts/build-deb.sh
           ./scripts/test.sh
-      - name: Build repository
+
+      - name: Build signed APT repository
+        env:
+          APT_GPG_PRIVATE_KEY: ${{ secrets.APT_GPG_PRIVATE_KEY }}
+          APT_GPG_PASSPHRASE: ${{ secrets.APT_GPG_PASSPHRASE }}
         run: |
-          rm -rf public
+          set -eu
+
+          if [ -z "${APT_GPG_PRIVATE_KEY:-}" ]; then
+            echo "APT_GPG_PRIVATE_KEY GitHub Actions secret is required." >&2
+            exit 1
+          fi
+
+          rm -rf public gnupg
           mkdir -p public/pool/main/c/cgl public/dists/stable/main/binary-all
+          chmod 700 gnupg
+          export GNUPGHOME="$PWD/gnupg"
+
+          printf '%s\n' "$APT_GPG_PRIVATE_KEY" | gpg --batch --import
+
           cp dist/*.deb public/pool/main/c/cgl/
           dpkg-scanpackages --arch all public/pool/main/c/cgl /dev/null > public/dists/stable/main/binary-all/Packages
           gzip -9c public/dists/stable/main/binary-all/Packages > public/dists/stable/main/binary-all/Packages.gz
-          cat > public/dists/stable/Release <<EOF
+
+          cd public/dists/stable
+          cat > Release <<EOF
           Origin: CGL+
           Label: CGL+
           Suite: stable
@@ -37,6 +56,32 @@ jobs:
           Description: CGL+ Debian package repository
           Date: $(date -Ru)
           EOF
+
+          {
+            echo "MD5Sum:"
+            find main -type f -print0 | sort -z | xargs -0 md5sum | sed 's#  #  #'
+            echo "SHA256:"
+            find main -type f -print0 | sort -z | xargs -0 sha256sum
+          } >> Release
+
+          KEY_ID="$(gpg --batch --with-colons --list-secret-keys | awk -F: '$1=="sec"{print $5; exit}')"
+          [ -n "$KEY_ID" ] || { echo "No signing key imported." >&2; exit 1; }
+
+          if [ -n "${APT_GPG_PASSPHRASE:-}" ]; then
+            GPG_ARGS="--pinentry-mode loopback --passphrase-fd 0"
+            printf '%s\n' "$APT_GPG_PASSPHRASE" | gpg --batch $GPG_ARGS --local-user "$KEY_ID" --clearsign --output InRelease Release
+            printf '%s\n' "$APT_GPG_PASSPHRASE" | gpg --batch $GPG_ARGS --local-user "$KEY_ID" --detach-sign --armor --output Release.gpg Release
+          else
+            gpg --batch --yes --local-user "$KEY_ID" --clearsign --output InRelease Release
+            gpg --batch --yes --local-user "$KEY_ID" --detach-sign --armor --output Release.gpg Release
+          fi
+
+          gpg --batch --export --armor "$KEY_ID" > ../../../../cgl-archive-keyring.asc
+          gpg --batch --export "$KEY_ID" > ../../../../cgl-archive-keyring.gpg
+          cd ../../../..
+          test -s cgl-archive-keyring.asc
+          test -s cgl-archive-keyring.gpg
+
       - name: Publish to GitHub Pages
         uses: peaceiris/actions-gh-pages@v4
         with:
@@ -44,4 +89,4 @@ jobs:
           publish_branch: gh-pages
           publish_dir: ./public
           force_orphan: true
-          commit_message: Publish CGL APT repository
+          commit_message: Publish signed CGL APT repository
