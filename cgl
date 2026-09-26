@@ -22,6 +22,7 @@ Usage:
   cgl run <script>
   cgl update
   cgl update -os rpi
+  cgl update -os ubuntu
   cgl install <package>
   cgl remove <package>
   cgl search <term>
@@ -126,6 +127,11 @@ update)
   if [ "${2:-}" = '-os' ] && [ "${3:-}" = 'rpi' ]; then
     path="$CGL_ROOT/scripts/CGL+-RPiOS-Update.sh"
     [ -f "$path" ] || die 'RPi update script is not installed'
+    exec "$path"
+  fi
+  if [ "${2:-}" = '-os' ] && [ "${3:-}" = 'ubuntu' ]; then
+    path="$CGL_ROOT/scripts/CGL+-Ubuntu-Update.sh"
+    [ -f "$path" ] || die 'Ubuntu update script is not installed'
     exec "$path"
   fi
   pm_update "$pm"
