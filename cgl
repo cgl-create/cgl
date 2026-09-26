@@ -23,6 +23,10 @@ Usage:
   cgl update
   cgl update -os rpi
   cgl update -os ubuntu
+  cgl autoupdate
+  cgl autoupdate status
+  cgl autoupdate on
+  cgl autoupdate off
   cgl install <package>
   cgl remove <package>
   cgl search <term>
@@ -99,6 +103,56 @@ pm_remove() {
   esac
 }
 
+self_update() {
+  pm="$1"
+  if [ "$pm" = "apt" ] && command -v dpkg-query >/dev/null 2>&1 &&
+     dpkg-query -W -f='${Status}' cgl 2>/dev/null | grep -q 'install ok installed'; then
+    printf '%s\n' "CGL+ | Checking for CGL updates..."
+    as_root apt-get install --only-upgrade -y cgl
+  fi
+}
+
+autoupdate_status() {
+  if [ -f /etc/cron.daily/cgl-autoupdate ]; then
+    printf '%s\n' "CGL+ automatic updates: enabled (daily)"
+  else
+    printf '%s\n' "CGL+ automatic updates: disabled"
+  fi
+}
+
+autoupdate_on() {
+  if [ "$(id -u)" -eq 0 ]; then
+    cat > /etc/cron.daily/cgl-autoupdate <<'EOF'
+#!/bin/sh
+if command -v cgl >/dev/null 2>&1; then
+  cgl update
+fi
+EOF
+    chmod 0755 /etc/cron.daily/cgl-autoupdate
+  elif command -v sudo >/dev/null 2>&1; then
+    sudo sh -c 'cat > /etc/cron.daily/cgl-autoupdate <<'EOF'
+#!/bin/sh
+if command -v cgl >/dev/null 2>&1; then
+  cgl update
+fi
+EOF
+chmod 0755 /etc/cron.daily/cgl-autoupdate'
+  else
+    die "sudo is required to enable automatic updates"
+  fi
+  printf '%s\n' "CGL+ automatic updates enabled (daily)."
+}
+
+autoupdate_off() {
+  if [ "$(id -u)" -eq 0 ]; then
+    rm -f /etc/cron.daily/cgl-autoupdate
+  elif command -v sudo >/dev/null 2>&1; then
+    sudo rm -f /etc/cron.daily/cgl-autoupdate
+  else
+    die "sudo is required to disable automatic updates"
+  fi
+  printf '%s\n' "CGL+ automatic updates disabled."
+}
 pm_search() {
   case "$1" in
     apt) apt-cache search "$2" ;;
@@ -136,6 +190,15 @@ update)
   fi
   pm_update "$pm"
   pm_upgrade "$pm"
+  self_update "$pm"
+  ;;
+autoupdate)
+  case "${2:-status}" in
+    status) autoupdate_status ;;
+    on|enable) autoupdate_on ;;
+    off|disable) autoupdate_off ;;
+    *) die 'usage: cgl autoupdate [status|on|off]' ;;
+  esac
   ;;
 install)
   [ "$#" -eq 2 ] || die 'usage: cgl install <package>'
