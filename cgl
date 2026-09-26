@@ -1,0 +1,17 @@
+#!/bin/sh
+set -eu
+CGL_VERSION="1.0.0"
+CGL_ROOT="/usr/share/cgl"
+usage() { printf '%s\n' 'CGL+ package and script manager' '' 'Usage:' '  cgl version' '  cgl help' '  cgl run <script>' '  cgl update' '  cgl update -os rpi' '  cgl install <package>' '  cgl remove <package>' '  cgl search <term>' '  cgl list' '  cgl doctor'; }
+die() { printf 'cgl: %s\n' "$*" >&2; exit 1; }
+case "${1:-help}" in
+version|--version|-v) printf 'cgl %s\n' "$CGL_VERSION" ;;
+help|--help|-h) usage ;;
+run) [ "$#" -ge 2 ] || die 'usage: cgl run <script>'; script="$2"; case "$script" in */*) path="$script";; *) path="$CGL_ROOT/scripts/$script";; esac; [ -f "$path" ] || die "script not found: $script"; [ -x "$path" ] || chmod +x "$path"; shift 2; exec "$path" "$@" ;;
+update) if [ "${2:-}" = '-os' ] && [ "${3:-}" = 'rpi' ]; then path="$CGL_ROOT/scripts/CGL+-RPiOS-Update.sh"; [ -f "$path" ] || die 'RPi update script is not installed'; exec "$path"; fi; sudo apt-get update; sudo apt-get upgrade -y ;;
+install) [ "$#" -eq 2 ] || die 'usage: cgl install <package>'; sudo apt-get update; sudo apt-get install -y "$2" ;;
+remove) [ "$#" -eq 2 ] || die 'usage: cgl remove <package>'; sudo apt-get remove -y "$2" ;;
+search) [ "$#" -eq 2 ] || die 'usage: cgl search <term>'; apt-cache search "$2" ;;
+list) find "$CGL_ROOT/scripts" -maxdepth 1 -type f -printf '%f\n' 2>/dev/null || true ;;
+doctor) printf 'CGL+ doctor\nVersion: %s\nRoot: %s\n' "$CGL_VERSION" "$CGL_ROOT"; command -v apt-get >/dev/null 2>&1 && printf 'APT: available\n' || printf 'APT: missing\n' ;;
+*) die "unknown command '$1'; run 'cgl help'";; esac
