@@ -122,6 +122,9 @@ jobs:
           test -s public/cgl-archive-keyring.asc
           test -s public/cgl-archive-keyring.gpg
 
+          # Keep the GitHub Pages custom domain explicit on every deployment.
+          printf '%s\n' 'packages.crazygamelabs.co.uk' > public/CNAME
+
       - name: Verify repository files before Pages publish
         run: |
           set -eu
