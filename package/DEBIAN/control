@@ -4,7 +4,6 @@ Section: utils
 Priority: optional
 Architecture: all
 Maintainer: CGL+ <cgl@crazygamelabs.co.uk>
-Depends: apt | dnf | yum | pacman | zypper | apk
 Description: CGL+ universal Linux package and script manager
  A Homebrew-inspired package and script manager for Linux distributions.
 Homepage: https://crazygamelabs.co.uk/
