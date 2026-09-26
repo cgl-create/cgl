@@ -23,6 +23,7 @@ Usage:
   cgl update
   cgl update -os rpi
   cgl update -os ubuntu
+  cgl update -pkg rdp -os -rpi
   cgl install rdp -os rpi
   cgl install rdp -os ubuntu
   cgl autoupdate
@@ -179,6 +180,16 @@ run)
   ;;
 update)
   pm="$(detect_pm)"
+  if [ "${2:-}" = '-pkg' ] && [ "${3:-}" = 'rdp' ] && [ "${4:-}" = '-os' ] && [ "${5:-}" = '-rpi' ]; then
+    path="$CGL_ROOT/scripts/CGL+-RDP-RPi.sh"
+    [ -f "$path" ] || die 'Raspberry Pi RDP setup script is not installed'
+    exec "$path"
+  fi
+  if [ "${2:-}" = '-pkg' ] && [ "${3:-}" = 'rdp' ] && [ "${4:-}" = '-os' ] && [ "${5:-}" = '-ubuntu' ]; then
+    path="$CGL_ROOT/scripts/CGL+-RDP-Ubuntu.sh"
+    [ -f "$path" ] || die 'Ubuntu RDP setup script is not installed'
+    exec "$path"
+  fi
   if [ "${2:-}" = '-os' ] && [ "${3:-}" = 'rpi' ]; then
     path="$CGL_ROOT/scripts/CGL+-RPiOS-Update.sh"
     [ -f "$path" ] || die 'RPi update script is not installed'
@@ -189,6 +200,7 @@ update)
     [ -f "$path" ] || die 'Ubuntu update script is not installed'
     exec "$path"
   fi
+  [ "$#" -eq 1 ] || die 'usage: cgl update | cgl update -os <rpi|ubuntu> | cgl update -pkg rdp -os <-rpi|-ubuntu>'
   pm_update "$pm"
   pm_upgrade "$pm"
   self_update "$pm"
