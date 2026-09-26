@@ -49,7 +49,7 @@ If you have reviewed the bootstrap script and want to run it directly from GitHu
 
     curl -fsSL https://raw.githubusercontent.com/cgl-create/cgl/main/scripts/setup-apt.sh | sudo sh
 
-The script downloads the public key over HTTPS, verifies its fingerprint, installs it under `/usr/share/keyrings`, and writes a `signed-by=` APT source entry.
+The script downloads the public key over HTTPS, verifies its fingerprint, installs it under `/usr/share/keyrings`, and writes a `signed-by=` APT source entry. It does not install the `cgl` package itself.
 
 ## Other Linux distributions
 
@@ -57,7 +57,7 @@ For Fedora, RHEL-family, Arch, openSUSE, and Alpine systems, CGL can be bootstra
 
     git clone https://github.com/cgl-create/cgl.git
     cd cgl
-    sudo ./install.sh
+    sudo sh ./install.sh
 
 This installs the CGL CLI and bundled scripts under `/usr/local`.
 
@@ -70,6 +70,7 @@ CGL then delegates package operations to the host's native package manager.
     cgl run CGL+-RPiOS-Update.sh
     cgl update
     cgl update -os rpi
+    cgl update -os ubuntu
     cgl install <package>
     cgl remove <package>
     cgl search <term>
