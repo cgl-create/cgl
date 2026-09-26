@@ -38,7 +38,15 @@ as_root apt-get autoclean
 printf '%s\n' "[7/7] Installing/Updating Speedtest CLI..."
 if ! command -v speedtest >/dev/null 2>&1; then
   if command -v curl >/dev/null 2>&1; then
-    curl -fsSL --proto '=https' --tlsv1.2 https://packagecloud.io/install/repositories/ookla/speedtest-cli/script.deb.sh | as_root sh
+    tmp_script="$(mktemp)"
+    trap 'rm -f "$tmp_script"' EXIT HUP INT TERM
+    curl -fsSL --proto '=https' --tlsv1.2 https://packagecloud.io/install/repositories/ookla/speedtest-cli/script.deb.sh -o "$tmp_script"
+    if command -v bash >/dev/null 2>&1; then
+      as_root bash "$tmp_script"
+    else
+      printf '%s\n' "CGL+: bash is required by the Speedtest repository installer." >&2
+      exit 1
+    fi
   else
     printf '%s\n' "CGL+: curl is required to install Speedtest CLI." >&2
     exit 1
