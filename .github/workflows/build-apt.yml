@@ -122,6 +122,10 @@ jobs:
           test -s public/cgl-archive-keyring.asc
           test -s public/cgl-archive-keyring.gpg
 
+          # Publish the single-curl installer at the custom domain.
+          cp install.sh public/install.sh
+          chmod 0755 public/install.sh
+
           # Keep the GitHub Pages custom domain explicit on every deployment.
           printf '%s\n' 'packages.crazygamelabs.co.uk' > public/CNAME
 
