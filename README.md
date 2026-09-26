@@ -71,6 +71,11 @@ CGL then delegates package operations to the host's native package manager.
     cgl update
     cgl update -os rpi
     cgl update -os ubuntu
+  cgl install rdp -os rpi
+  cgl install rdp -os ubuntu
+  cgl autoupdate
+  cgl autoupdate on
+  cgl autoupdate off
     cgl install <package>
     cgl remove <package>
     cgl search <term>
