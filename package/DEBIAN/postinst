@@ -1,4 +1,4 @@
 #!/bin/sh
 set -e
-chmod 0755 /usr/bin/cgl /usr/share/cgl/cgl /usr/share/cgl/scripts/CGL+-RPiOS-Update.sh /usr/share/cgl/scripts/CGL+-Ubuntu-Update.sh
+chmod 0755 /usr/bin/cgl /usr/share/cgl/cgl /usr/share/cgl/scripts/CGL+-RPiOS-Update.sh /usr/share/cgl/scripts/CGL+-Ubuntu-Update.sh /usr/share/cgl/scripts/CGL+-RDP-RPi.sh /usr/share/cgl/scripts/CGL+-RDP-Ubuntu.sh
 exit 0
