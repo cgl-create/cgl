@@ -1,7 +1,7 @@
 #!/bin/sh
 set -eu
 ROOT="$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)"
-test "$("$ROOT/cgl" version)" = 'cgl 1.0.9'
+test "$("$ROOT/cgl" version)" = 'cgl 1.0.10'
 "$ROOT/cgl" help >/dev/null
 sh -n "$ROOT/cgl"
 sh -n "$ROOT/scripts/CGL+-RDP-RPi.sh"
@@ -26,7 +26,7 @@ grep -F 'raw.githubusercontent.com/cgl-create/cgl/gh-pages' "$ROOT/install.sh" >
 grep -F 'CODESPACES' "$ROOT/scripts/CGL+-RDP-Web.sh" >/dev/null
 grep -F 'websockify' "$ROOT/scripts/CGL+-RDP-Web.sh" >/dev/null
 grep -F 'Xvfb "$DISPLAY_NUM"' "$ROOT/scripts/CGL+-RDP-Web.sh" >/dev/null
-grep -F 'gnome-session --session=gnome' "$ROOT/scripts/CGL+-RDP-Web.sh" >/dev/null
+grep -F 'gnome-shell --x11 --replace' "$ROOT/scripts/CGL+-RDP-Web.sh" >/dev/null
 grep -F 'x11vnc' "$ROOT/scripts/CGL+-RDP-Web.sh" >/dev/null
 
 echo 'CGL+ tests passed.'
