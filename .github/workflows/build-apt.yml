@@ -8,9 +8,6 @@ on:
 permissions:
   contents: write
 
-# Only one APT repository publisher may update gh-pages at a time.
-# Without this, two pushes to main can race and one Pages push can be rejected
-# because the gh-pages ref changed while the publisher was preparing its commit.
 concurrency:
   group: cgl-apt-pages-publish
   cancel-in-progress: false
@@ -43,19 +40,10 @@ jobs:
 
           VERSION="$(sed -n 's/^Version: //p' package/DEBIAN/control | head -n1)"
           DEB="dist/cgl_${VERSION}_all.deb"
-
           test -f "$DEB"
 
           rm -rf public gnupg
-          mkdir -p \
-            public/pool/main/c/cgl \
-            public/public/pool/main/c/cgl \
-            public/dists/stable/main/binary-all \
-            public/dists/stable/main/binary-amd64 \
-            public/dists/stable/main/binary-arm64 \
-            public/dists/stable/main/binary-armhf \
-            public/dists/stable/main/binary-i386 \
-            gnupg
+          mkdir -p             public/pool/main/c/cgl             public/public/pool/main/c/cgl             public/dists/stable/main/binary-all             public/dists/stable/main/binary-amd64             public/dists/stable/main/binary-arm64             public/dists/stable/main/binary-armhf             public/dists/stable/main/binary-i386             gnupg
           chmod 700 gnupg
           export GNUPGHOME="$PWD/gnupg"
 
@@ -64,8 +52,7 @@ jobs:
           # Canonical package path.
           cp "$DEB" public/pool/main/c/cgl/
 
-          # Backward-compatible alias for clients that cached old metadata
-          # containing /public/pool/... in the Filename field.
+          # Legacy package path retained for clients that cached old metadata.
           cp "$DEB" public/public/pool/main/c/cgl/
 
           (
@@ -82,7 +69,6 @@ jobs:
             gzip -9c "public/dists/stable/main/binary-$arch/Packages" > "public/dists/stable/main/binary-$arch/Packages.gz"
           done
 
-          # Prevent a regression to the invalid public/pool Filename.
           if grep -R '^Filename: public/' public/dists/stable/main; then
             echo "ERROR: APT metadata contains an invalid public/ package path." >&2
             exit 1
@@ -126,23 +112,30 @@ jobs:
           cd ../../..
           gpg --batch --export --armor "$KEY_ID" > public/cgl-archive-keyring.asc
           gpg --batch --export "$KEY_ID" > public/cgl-archive-keyring.gpg
-          test -s public/cgl-archive-keyring.asc
-          test -s public/cgl-archive-keyring.gpg
-
-          # Publish the single-curl installer at the custom domain.
           cp install.sh public/install.sh
           chmod 0755 public/install.sh
-
-          # Keep the GitHub Pages custom domain explicit on every deployment.
           printf '%s\n' 'packages.crazygamelabs.co.uk' > public/CNAME
+
+          # Mirror the complete repository into /public as well. This supports
+          # GitHub Pages configurations whose source directory is gh-pages:/public
+          # while retaining the canonical repository at gh-pages:/.
+          rm -rf public/public/dists public/public/install.sh public/public/CNAME public/public/cgl-archive-keyring.asc public/public/cgl-archive-keyring.gpg
+          cp -a public/dists public/public/dists
+          cp public/install.sh public/public/install.sh
+          cp public/CNAME public/public/CNAME
+          cp public/cgl-archive-keyring.asc public/public/cgl-archive-keyring.asc
+          cp public/cgl-archive-keyring.gpg public/public/cgl-archive-keyring.gpg
 
       - name: Verify repository files before Pages publish
         run: |
           set -eu
           VERSION="$(sed -n 's/^Version: //p' package/DEBIAN/control | head -n1)"
-          test -f public/dists/stable/Release
-          test -f public/dists/stable/InRelease
-          test -f "public/pool/main/c/cgl/cgl_${VERSION}_all.deb"
+          for root in public public/public; do
+            test -f "$root/dists/stable/Release"
+            test -f "$root/dists/stable/InRelease"
+            test -f "$root/pool/main/c/cgl/cgl_${VERSION}_all.deb"
+            test -f "$root/CNAME"
+          done
 
       - name: Publish to GitHub Pages
         uses: peaceiris/actions-gh-pages@v4
@@ -151,4 +144,4 @@ jobs:
           publish_branch: gh-pages
           publish_dir: ./public
           force_orphan: true
-          commit_message: Publish signed CGL APT repository with legacy path compatibility
+          commit_message: Publish signed CGL APT repository with root and public source compatibility
