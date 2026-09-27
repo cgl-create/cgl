@@ -32,10 +32,10 @@ if [ "$CODESPACE_MODE" -eq 1 ]; then
   chmod 700 "$RDP_STATE" "$RDP_STATE/runtime"
 
   printf '%s\n' "[1/5] Checking desktop and RDP dependencies..."
-  if ! command -v openssl >/dev/null 2>&1 || ! command -v websockify >/dev/null 2>&1 || [ ! -d /usr/share/novnc ] || ! command -v Xvfb >/dev/null 2>&1 || ! command -v x11vnc >/dev/null 2>&1 || ! command -v gnome-session >/dev/null 2>&1; then
+  if ! command -v openssl >/dev/null 2>&1 || ! command -v websockify >/dev/null 2>&1 || [ ! -d /usr/share/novnc ] || ! command -v Xvfb >/dev/null 2>&1 || ! command -v x11vnc >/dev/null 2>&1 || ! command -v gnome-session >/dev/null 2>&1 || ! command -v gnome-flashback >/dev/null 2>&1; then
     printf '%s\n' "CGL+: Installing Codespace desktop/RDP dependencies..."
     as_root apt-get update
-    as_root apt-get install -y openssl novnc websockify xvfb x11vnc dbus-x11 gnome-session gnome-shell
+    as_root apt-get install -y openssl novnc websockify xvfb x11vnc dbus-x11 gnome-session gnome-shell gnome-session-flashback
   fi
 
   for tool in Xvfb x11vnc dbus-run-session gnome-session websockify; do
@@ -104,12 +104,15 @@ EOF
   sleep 2
   kill -0 "$(cat "$RDP_STATE/xvfb.pid")" 2>/dev/null || { printf '%s\n' "CGL+: Xvfb failed. See $RDP_STATE/xvfb.log." >&2; exit 1; }
 
-  DISPLAY="$DISPLAY_NUM" XDG_RUNTIME_DIR="$RDP_STATE/runtime" GDK_BACKEND=x11 LIBGL_ALWAYS_SOFTWARE=1 MUTTER_DEBUG_DISABLE_HW_CURSORS=1 dbus-run-session -- sh -c 'gnome-settings-daemon >/tmp/cgl-rdp-gnome-settings.log 2>&1 & exec gnome-shell --x11 --replace' >"$RDP_STATE/gnome.log" 2>&1 &
+  # Full GNOME Shell expects the systemd login-manager D-Bus API. Codespaces do not
+  # provide a system systemd bus, so use GNOME Flashback (GNOME's lightweight session)
+  # as the container-safe desktop session.
+  DISPLAY="$DISPLAY_NUM" XDG_RUNTIME_DIR="$RDP_STATE/runtime" GDK_BACKEND=x11 LIBGL_ALWAYS_SOFTWARE=1 dbus-run-session -- gnome-session --session=gnome-flashback-metacity >"$RDP_STATE/gnome.log" 2>&1 &
   echo $! >"$RDP_STATE/gnome.pid"
   sleep 12
-  if ! pgrep -f "gnome-shell.*--x11" >/dev/null 2>&1; then
-    printf '%s\n' "CGL+: GNOME Shell failed to start in the Codespace container. Last log lines:" >&2
-    tail -n 60 "$RDP_STATE/gnome.log" 2>/dev/null || true
+  if ! pgrep -f "gnome-flashback|gnome-panel|metacity" >/dev/null 2>&1; then
+    printf '%s\n' "CGL+: GNOME Flashback failed to start in the Codespace container. Last log lines:" >&2
+    tail -n 80 "$RDP_STATE/gnome.log" 2>/dev/null || true
     exit 1
   fi
 
