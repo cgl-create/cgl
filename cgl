@@ -1,6 +1,6 @@
 #!/bin/sh
 set -eu
-CGL_VERSION="1.0.4"
+CGL_VERSION="1.0.5"
 
 # Debian packages install CGL under /usr/share/cgl. The bootstrap installer
 # uses /usr/local/share/cgl. Prefer the system location when present.
@@ -158,6 +158,7 @@ autoupdate_off() {
   fi
   printf '%s\n' "CGL+ automatic updates disabled."
 }
+
 pm_search() {
   case "$1" in
     apt) apt-cache search "$2" ;;
@@ -186,12 +187,12 @@ update)
   if [ "${2:-}" = '-pkg' ] && [ "${3:-}" = 'rdp' ] && [ "${4:-}" = '-os' ] && [ "${5:-}" = '-rpi' ]; then
     path="$CGL_ROOT/scripts/CGL+-RDP-RPi.sh"
     [ -f "$path" ] || die 'Raspberry Pi RDP setup script is not installed'
-    exec "$path"
+    exec "$path" install
   fi
   if [ "${2:-}" = '-pkg' ] && [ "${3:-}" = 'rdp' ] && [ "${4:-}" = '-os' ] && [ "${5:-}" = '-ubuntu' ]; then
     path="$CGL_ROOT/scripts/CGL+-RDP-Ubuntu.sh"
     [ -f "$path" ] || die 'Ubuntu RDP setup script is not installed'
-    exec "$path"
+    exec "$path" install
   fi
   if [ "${2:-}" = '-os' ] && [ "${3:-}" = 'rpi' ]; then
     path="$CGL_ROOT/scripts/CGL+-RPiOS-Update.sh"
@@ -217,6 +218,11 @@ autoupdate)
   esac
   ;;
 install)
+  # RDP install/lifecycle syntax:
+  #   cgl install rdp -os rpi
+  #   cgl install -revoke rdp -os rpi
+  #   cgl install -rst rdp -os rpi
+  #   cgl install -fix rdp -os rpi
   if [ "$#" -eq 4 ] && [ "$2" = "rdp" ] && [ "$3" = "-os" ]; then
     case "$4" in
       rpi)
