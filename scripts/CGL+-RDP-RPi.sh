@@ -3,7 +3,7 @@ set -eu
 SCRIPT_DIR="$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)"
 ACTION="${1:-install}"
 ACTION="${ACTION#-}"
-WEB="$SCRIPT_DIR/scripts/CGL+-RDP-Web.sh"
+WEB="$SCRIPT_DIR/CGL+-RDP-Web.sh"
 
 as_root() {
   if [ "$(id -u)" -eq 0 ]; then "$@"
