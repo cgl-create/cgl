@@ -2,21 +2,51 @@
 set -eu
 
 TARGET_LABEL="${1:-Linux}"
+CODESPACE_MODE=0
+if [ -n "${CODESPACES:-}" ] || [ -n "${CODESPACE_NAME:-}" ] || [ -n "${REMOTE_CONTAINERS:-}" ]; then
+  CODESPACE_MODE=1
+fi
 
 clear
 printf '%s\n' "CGL+ LabZ | Current Desktop Browser RDP"
 printf '%s\n\n' "Configuring CGL+ RDP for $TARGET_LABEL..."
 
 as_root() {
-  if [ "$(id -u)" -eq 0 ]; then
-    "$@"
-  elif command -v sudo >/dev/null 2>&1; then
-    sudo "$@"
-  else
-    printf '%s\n' "CGL+: root privileges are required." >&2
-    exit 1
+  if [ "$(id -u)" -eq 0 ]; then "$@"
+  elif command -v sudo >/dev/null 2>&1; then sudo "$@"
+  else printf '%s\n' "CGL+: root privileges are required." >&2; exit 1
   fi
 }
+
+if [ "$CODESPACE_MODE" -eq 1 ]; then
+  printf '%s\n' "[Codespace] Development/test environment detected."
+  printf '%s\n' "CGL+: Raspberry Pi desktop services will not be started in this container."
+  printf '%s\n' "CGL+: Validating the browser RDP components only."
+  printf '%s\n' "[1/3] Checking OpenSSL..."
+  command -v openssl >/dev/null 2>&1 || {
+    printf '%s\n' "CGL+: OpenSSL is required for the RDP tooling test." >&2
+    exit 1
+  }
+  printf '%s\n' "[2/3] Checking noVNC/WebSocket tooling..."
+  command -v websockify >/dev/null 2>&1 || {
+    printf '%s\n' "CGL+: websockify is required for the RDP tooling test." >&2
+    exit 1
+  }
+  [ -d /usr/share/novnc ] || {
+    printf '%s\n' "CGL+: noVNC files are required for the RDP tooling test." >&2
+    exit 1
+  }
+  printf '%s\n' "[3/3] Checking container limitations..."
+  if command -v systemctl >/dev/null 2>&1 && systemctl is-system-running >/dev/null 2>&1; then
+    printf '%s\n' "CGL+: systemd is available, but Codespace mode will not manage services."
+  else
+    printf '%s\n' "CGL+: systemd is unavailable in this Codespace, as expected."
+  fi
+  printf '\n%s\n' "CGL+ LabZ | RDP tooling test passed"
+  printf '%s\n' "Codespaces cannot host the Raspberry Pi's Wayland desktop session."
+  printf '%s\n' "No WayVNC, systemd service, Avahi daemon, or desktop was modified."
+  exit 0
+fi
 
 if ! command -v wayvnc >/dev/null 2>&1; then
   printf '%s\n' "CGL+: wayvnc is required to share the current Wayland desktop." >&2
@@ -25,43 +55,27 @@ if ! command -v wayvnc >/dev/null 2>&1; then
 fi
 
 if ! command -v openssl >/dev/null 2>&1; then
-  printf '%s\n' "[1/5] Installing OpenSSL..."
+  printf '%s\n' "[1/4] Installing OpenSSL..."
   as_root apt-get update
   as_root apt-get install -y openssl
 else
-  printf '%s\n' "[1/5] OpenSSL is already installed."
+  printf '%s\n' "[1/4] OpenSSL is already installed."
 fi
 
-printf '%s\n' "[2/5] Preparing noVNC, WebSocket proxy and Avahi..."
-as_root apt-get update
-as_root apt-get install -y novnc websockify avahi-daemon
+printf '%s\n' "[2/4] Preparing noVNC, WebSocket proxy and Avahi..."
+if ! command -v websockify >/dev/null 2>&1 || [ ! -d /usr/share/novnc ]; then
+  as_root apt-get update
+  as_root apt-get install -y novnc websockify avahi-daemon
+else
+  printf '%s\n' "CGL+: noVNC and WebSocket proxy are already installed."
+fi
+as_root apt-mark manual wayvnc 2>/dev/null || true
 
-printf '%s\n' "[3/5] Configuring WayVNC to share the current desktop..."
-
-as_root mkdir -p /etc/wayvnc /usr/share/cgl/rdp-web
+printf '%s\n' "[3/4] Preserving the existing WayVNC configuration..."
+as_root mkdir -p /usr/share/cgl/rdp-web
 if [ -f /etc/wayvnc/config ] && [ ! -f /etc/wayvnc/config.cgl-backup ]; then
   as_root cp /etc/wayvnc/config /etc/wayvnc/config.cgl-backup
 fi
-
-if [ ! -f /etc/wayvnc/cgl-rdp-key.pem ] || [ ! -f /etc/wayvnc/cgl-rdp-cert.pem ]; then
-  as_root openssl req -x509 -newkey ec -pkeyopt ec_paramgen_curve:prime256v1 -sha256 \
-    -days 825 -nodes \
-    -keyout /etc/wayvnc/cgl-rdp-key.pem \
-    -out /etc/wayvnc/cgl-rdp-cert.pem \
-    -subj "/CN=$(hostname -f 2>/dev/null || hostname)"
-  as_root chmod 0600 /etc/wayvnc/cgl-rdp-key.pem
-  as_root chmod 0644 /etc/wayvnc/cgl-rdp-cert.pem
-fi
-
-as_root sh -c 'cat > /etc/wayvnc/config' <<'EOF'
-address=127.0.0.1
-port=5900
-enable_auth=true
-enable_pam=true
-private_key_file=/etc/wayvnc/cgl-rdp-key.pem
-certificate_file=/etc/wayvnc/cgl-rdp-cert.pem
-relax_encryption=true
-EOF
 
 as_root sh -c 'cat > /usr/share/cgl/rdp-web/index.html' <<'EOF'
 <!doctype html>
@@ -125,7 +139,7 @@ function showError(message){error.textContent=message||"Connection failed.";erro
 function startRDP(username,password){
  savedCredentials={username,password}; error.style.display="none"; connect.disabled=true; connect.textContent="Connecting…";
  const scheme=location.protocol==="https:"?"wss":"ws";
- rfb=new RFB(screen,scheme+"://"+location.host+"/websockify",{shared:false,credentials:savedCredentials});
+ rfb=new RFB(screen,scheme+"://"+location.host+"/websockify",{shared:false});
  rfb.scaleViewport=true;rfb.clipViewport=true;rfb.resizeSession=false;
  rfb.addEventListener("connect",()=>{login.style.display="none";desktop.style.display="block";status.textContent="Connected";connect.disabled=false;connect.textContent="Connect";rfb.focus();});
  rfb.addEventListener("credentialsrequired",()=>rfb.sendCredentials(savedCredentials));
@@ -146,7 +160,7 @@ fi
 as_root chmod 0755 /usr/share/cgl/rdp-web
 as_root chmod 0644 /usr/share/cgl/rdp-web/index.html
 
-printf '%s\n' "[4/5] Creating the CGL+ browser gateway..."
+printf '%s\n' "[4/4] Starting the browser gateway without restarting WayVNC..."
 as_root sh -c 'cat > /etc/systemd/system/cgl-rdp-web.service' <<'EOF'
 [Unit]
 Description=CGL+ RDP browser gateway
@@ -163,22 +177,16 @@ RestartSec=2
 WantedBy=multi-user.target
 EOF
 
-printf '%s\n' "[5/5] Restarting the existing WayVNC desktop session..."
 as_root systemctl daemon-reload
 as_root systemctl enable cgl-rdp-web.service
 as_root systemctl restart cgl-rdp-web.service
-as_root systemctl enable avahi-daemon
-as_root systemctl restart avahi-daemon
-
-if command -v pkill >/dev/null 2>&1; then
-  as_root pkill -x wayvnc 2>/dev/null || true
-fi
-
-sleep 2
+as_root enable avahi-daemon 2>/dev/null || true
+as_root systemctl enable avahi-daemon 2>/dev/null || true
+as_root systemctl restart avahi-daemon 2>/dev/null || true
 
 if ! ss -ltn 2>/dev/null | grep -q ':5900 '; then
-  printf '%s\n' "CGL+: WayVNC did not return on TCP 5900 after restart." >&2
-  printf '%s\n' "Your desktop's existing WayVNC launcher may need to be restarted from the desktop session." >&2
+  printf '%s\n' "CGL+: Existing WayVNC is not listening on TCP 5900." >&2
+  printf '%s\n' "CGL+: The browser gateway was not allowed to restart or rewrite WayVNC." >&2
   exit 1
 fi
 
