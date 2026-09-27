@@ -1,6 +1,6 @@
 #!/bin/sh
 set -eu
-CGL_VERSION="1.0.9"
+CGL_VERSION="1.0.10"
 
 # Debian packages install CGL under /usr/share/cgl. The bootstrap installer
 # uses /usr/local/share/cgl. Prefer the system location when present.
