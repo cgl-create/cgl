@@ -104,15 +104,23 @@ EOF
   sleep 2
   kill -0 "$(cat "$RDP_STATE/xvfb.pid")" 2>/dev/null || { printf '%s\n' "CGL+: Xvfb failed. See $RDP_STATE/xvfb.log." >&2; exit 1; }
 
-  # Full GNOME Shell expects the systemd login-manager D-Bus API. Codespaces do not
-  # provide a system systemd bus, so use GNOME Flashback (GNOME's lightweight session)
-  # as the container-safe desktop session.
-  DISPLAY="$DISPLAY_NUM" XDG_RUNTIME_DIR="$RDP_STATE/runtime" GDK_BACKEND=x11 LIBGL_ALWAYS_SOFTWARE=1 dbus-run-session -- gnome-session --session=gnome-flashback-metacity >"$RDP_STATE/gnome.log" 2>&1 &
+  # Do not launch gnome-session here: even its Flashback session tries to
+  # contact the systemd system bus, which Codespaces do not provide. Start the
+  # GNOME Flashback components directly inside one private D-Bus session instead.
+  DISPLAY="$DISPLAY_NUM" XDG_RUNTIME_DIR="$RDP_STATE/runtime" GDK_BACKEND=x11 LIBGL_ALWAYS_SOFTWARE=1 dbus-run-session -- sh -c '
+    gnome-settings-daemon >/tmp/cgl-rdp-settings.log 2>&1 &
+    metacity --replace >/tmp/cgl-rdp-metacity.log 2>&1 &
+    gnome-panel >/tmp/cgl-rdp-panel.log 2>&1 &
+    nautilus --no-default-window >/tmp/cgl-rdp-nautilus.log 2>&1 &
+    wait
+  ' >"$RDP_STATE/gnome.log" 2>&1 &
   echo $! >"$RDP_STATE/gnome.pid"
   sleep 12
-  if ! pgrep -f "gnome-flashback|gnome-panel|metacity" >/dev/null 2>&1; then
-    printf '%s\n' "CGL+: GNOME Flashback failed to start in the Codespace container. Last log lines:" >&2
+  if ! pgrep -f "gnome-panel|metacity" >/dev/null 2>&1; then
+    printf '%s\n' "CGL+: GNOME Flashback components failed to start in the Codespace container. Last log lines:" >&2
     tail -n 80 "$RDP_STATE/gnome.log" 2>/dev/null || true
+    tail -n 40 /tmp/cgl-rdp-metacity.log 2>/dev/null || true
+    tail -n 40 /tmp/cgl-rdp-panel.log 2>/dev/null || true
     exit 1
   fi
 
