@@ -26,7 +26,8 @@ grep -F 'raw.githubusercontent.com/cgl-create/cgl/gh-pages' "$ROOT/install.sh" >
 grep -F 'CODESPACES' "$ROOT/scripts/CGL+-RDP-Web.sh" >/dev/null
 grep -F 'websockify' "$ROOT/scripts/CGL+-RDP-Web.sh" >/dev/null
 grep -F 'Xvfb "$DISPLAY_NUM"' "$ROOT/scripts/CGL+-RDP-Web.sh" >/dev/null
-grep -F 'gnome-flashback-metacity' "$ROOT/scripts/CGL+-RDP-Web.sh" >/dev/null
+grep -F 'metacity --replace' "$ROOT/scripts/CGL+-RDP-Web.sh" >/dev/null
+grep -F 'gnome-panel' "$ROOT/scripts/CGL+-RDP-Web.sh" >/dev/null
 grep -F 'x11vnc' "$ROOT/scripts/CGL+-RDP-Web.sh" >/dev/null
 
 echo 'CGL+ tests passed.'
