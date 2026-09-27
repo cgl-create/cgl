@@ -1,0 +1,20 @@
+{
+  "name": "CGL+ Development",
+  "image": "mcr.microsoft.com/devcontainers/base:bookworm",
+  "features": {
+    "ghcr.io/devcontainers/features/github-cli:1": {}
+  },
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "timonwong.shellcheck"
+      ],
+      "settings": {
+        "editor.formatOnSave": false,
+        "files.eol": "\n"
+      }
+    }
+  },
+  "postCreateCommand": "chmod +x cgl install.sh scripts/*.sh && ./scripts/test.sh",
+  "remoteUser": "vscode"
+}
