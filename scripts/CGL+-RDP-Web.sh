@@ -104,12 +104,12 @@ EOF
   sleep 2
   kill -0 "$(cat "$RDP_STATE/xvfb.pid")" 2>/dev/null || { printf '%s\n' "CGL+: Xvfb failed. See $RDP_STATE/xvfb.log." >&2; exit 1; }
 
-  DISPLAY="$DISPLAY_NUM" XDG_RUNTIME_DIR="$RDP_STATE/runtime" dbus-run-session -- gnome-session --session=gnome >"$RDP_STATE/gnome.log" 2>&1 &
+  DISPLAY="$DISPLAY_NUM" XDG_RUNTIME_DIR="$RDP_STATE/runtime" GDK_BACKEND=x11 LIBGL_ALWAYS_SOFTWARE=1 MUTTER_DEBUG_DISABLE_HW_CURSORS=1 dbus-run-session -- sh -c 'gnome-settings-daemon >/tmp/cgl-rdp-gnome-settings.log 2>&1 & exec gnome-shell --x11 --replace' >"$RDP_STATE/gnome.log" 2>&1 &
   echo $! >"$RDP_STATE/gnome.pid"
-  sleep 10
-  if ! kill -0 "$(cat "$RDP_STATE/gnome.pid")" 2>/dev/null; then
-    printf '%s\n' "CGL+: GNOME session failed to start. Last log lines:" >&2
-    tail -n 40 "$RDP_STATE/gnome.log" 2>/dev/null || true
+  sleep 12
+  if ! pgrep -f "gnome-shell.*--x11" >/dev/null 2>&1; then
+    printf '%s\n' "CGL+: GNOME Shell failed to start in the Codespace container. Last log lines:" >&2
+    tail -n 60 "$RDP_STATE/gnome.log" 2>/dev/null || true
     exit 1
   fi
 
