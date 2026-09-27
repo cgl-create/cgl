@@ -180,7 +180,6 @@ EOF
 as_root systemctl daemon-reload
 as_root systemctl enable cgl-rdp-web.service
 as_root systemctl restart cgl-rdp-web.service
-as_root enable avahi-daemon 2>/dev/null || true
 as_root systemctl enable avahi-daemon 2>/dev/null || true
 as_root systemctl restart avahi-daemon 2>/dev/null || true
 
