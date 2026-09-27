@@ -1,7 +1,7 @@
 #!/bin/sh
 set -eu
 ROOT="$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)"
-test "$("$ROOT/cgl" version)" = 'cgl 1.0.11'
+test "$("$ROOT/cgl" version)" = 'cgl 1.0.12'
 "$ROOT/cgl" help >/dev/null
 sh -n "$ROOT/cgl"
 sh -n "$ROOT/scripts/CGL+-RDP-RPi.sh"
