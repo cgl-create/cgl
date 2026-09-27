@@ -1,6 +1,6 @@
 #!/bin/sh
 set -eu
-CGL_VERSION="1.0.5"
+CGL_VERSION="1.0.6"
 
 # Debian packages install CGL under /usr/share/cgl. The bootstrap installer
 # uses /usr/local/share/cgl. Prefer the system location when present.
@@ -11,6 +11,10 @@ elif [ -d /usr/local/share/cgl ]; then
 else
   CGL_ROOT="/usr/local/share/cgl"
 fi
+
+CGL_APT_PRIMARY="https://packages.crazygamelabs.co.uk"
+CGL_APT_FALLBACK="https://raw.githubusercontent.com/cgl-create/cgl/gh-pages"
+CGL_APT_SOURCES="/etc/apt/sources.list.d/cgl.list"
 
 usage() {
   cat <<'EOF'
@@ -60,9 +64,32 @@ detect_pm() {
   else die "no supported Linux package manager found"; fi
 }
 
+apt_repo_available() {
+  url="$1"
+  if command -v curl >/dev/null 2>&1; then
+    curl -fsSL --max-time 5 --proto '=https' --tlsv1.2 "$url/dists/stable/Release" >/dev/null 2>&1
+  elif command -v wget >/dev/null 2>&1; then
+    wget -q -T 5 -O /dev/null "$url/dists/stable/Release" >/dev/null 2>&1
+  else
+    return 1
+  fi
+}
+
+repair_cgl_apt_source() {
+  [ "$(id -u)" -eq 0 ] || return 0
+  [ -f "$CGL_APT_SOURCES" ] || return 0
+  grep -q 'packages.crazygamelabs.co.uk' "$CGL_APT_SOURCES" 2>/dev/null || return 0
+  apt_repo_available "$CGL_APT_PRIMARY" && return 0
+  printf '%s\n' "CGL+ | Primary package repository is unavailable; switching to GitHub Pages fallback."
+  printf '%s\n' "deb [signed-by=/usr/share/keyrings/cgl-archive-keyring.gpg] $CGL_APT_FALLBACK stable main" > "$CGL_APT_SOURCES"
+}
+
 pm_update() {
   case "$1" in
-    apt) as_root apt-get update ;;
+    apt)
+      repair_cgl_apt_source
+      as_root apt-get update
+      ;;
     dnf) as_root dnf makecache ;;
     yum) as_root yum makecache ;;
     pacman) as_root pacman -Syu --noconfirm ;;
