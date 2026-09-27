@@ -1,10 +1,9 @@
 #!/bin/sh
 set -eu
 SCRIPT_DIR="$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)"
-# Accept both internal action names and the public CLI spellings.
 ACTION="${1:-install}"
 ACTION="${ACTION#-}"
-WEB="$SCRIPT_DIR/CGL+-RDP-Web.sh"
+WEB="$SCRIPT_DIR/scripts/CGL+-RDP-Web.sh"
 
 as_root() {
   if [ "$(id -u)" -eq 0 ]; then "$@"
@@ -18,9 +17,10 @@ remove_rdp() {
   as_root rm -f /etc/systemd/system/cgl-rdp-web.service
   as_root systemctl daemon-reload
   as_root rm -rf /usr/share/cgl/rdp-web
-  as_root rm -f /etc/wayvnc/cgl-rdp-key.pem /etc/wayvnc/cgl-rdp-cert.pem
+  as_root rm -f /etc/wayvnc/cgl-rdp-key.pem /etc/wayvnc/cgl-rdp-cert.pem /etc/wayvnc/config.cgl-backup
   if command -v apt-get >/dev/null 2>&1; then
     as_root apt-get remove -y novnc websockify 2>/dev/null || true
+    as_root apt-mark manual wayvnc 2>/dev/null || true
   fi
 }
 
@@ -29,28 +29,18 @@ case "$ACTION" in
   revoke)
     printf '%s\n' "CGL+ LabZ | Revoking RDP..."
     remove_rdp
-    as_root rm -f /etc/wayvnc/config.cgl-backup
-    printf '%s\n' "CGL+: RDP removed. Existing WayVNC configuration was left untouched."
+    printf '%s\n' "CGL+: CGL+ RDP removed. Existing WayVNC configuration and Linux passwords were left untouched."
+    printf '%s\n' "CGL+: No CGL+ password is stored on disk."
     ;;
   rst)
     printf '%s\n' "CGL+ LabZ | Resetting RDP..."
     remove_rdp
-    as_root rm -f /etc/wayvnc/config.cgl-backup
     exec "$WEB" "Raspberry Pi OS"
     ;;
   fix)
     printf '%s\n' "CGL+ LabZ | Fixing RDP while preserving configuration..."
-    SAVED="$(mktemp)"
-    trap 'rm -f "$SAVED"' EXIT
-    if [ -f /etc/wayvnc/config ]; then as_root cp /etc/wayvnc/config "$SAVED"; fi
     remove_rdp
-    "$WEB" "Raspberry Pi OS"
-    if [ -s "$SAVED" ]; then
-      as_root cp "$SAVED" /etc/wayvnc/config
-      as_root rm -f /etc/wayvnc/config.cgl-backup
-    fi
-    printf '%s\n' "CGL+: Existing WayVNC configuration preserved."
-    printf '%s\n' "CGL+: Linux/PAM passwords are not stored in plaintext by CGL+."
+    exec "$WEB" "Raspberry Pi OS"
     ;;
   *) printf '%s\n' "CGL+: unknown RDP action: $ACTION" >&2; exit 2 ;;
 esac
