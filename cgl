@@ -1,6 +1,6 @@
 #!/bin/sh
 set -eu
-CGL_VERSION="1.0.13"
+CGL_VERSION="1.0.14"
 
 # Debian packages install CGL under /usr/share/cgl. The bootstrap installer
 # uses /usr/local/share/cgl. Prefer the system location when present.
@@ -26,6 +26,7 @@ Usage:
   cgl run <script>
   cgl update
   cgl update -os rpi
+  cgl update -pkg <package>
   cgl update -pkg skille-secret -os rpi -key aqs-skille-key1
   cgl update -os ubuntu
   cgl update -pkg rdp -os -rpi
@@ -227,10 +228,20 @@ update)
     exec "$path" install
   fi
   if [ "${2:-}" = '-pkg' ] && [ "${3:-}" = 'skille-secret' ]; then
-    [ "${4:-}" = '-os' ] && [ "${5:-}" = 'rpi' ] && [ "${6:-}" = '-key' ] && [ "${7:-}" = 'aqs-skille-key1' ] || die 'usage: cgl update -pkg skille-secret -os rpi -key aqs-skille-key1'
     path="$CGL_ROOT/scripts/CGL+-SkillExpo-RPi.sh"
     [ -f "$path" ] || die 'SkillExpo package script is not installed'
-    exec "$path" update -key aqs-skille-key1
+    if [ "${4:-}" = '-os' ]; then
+      [ "${5:-}" = 'rpi' ] || die 'SkillExpo package currently supports: rpi'
+      if [ "${6:-}" = '-key' ]; then
+        [ "${7:-}" = 'aqs-skille-key1' ] || die 'invalid SkillExpo Project Key'
+        exec "$path" update -key "$7"
+      fi
+      [ "${6:-}" = '' ] || die 'usage: cgl update -pkg skille-secret -os rpi [-key <project-key>]'
+    fi
+    exec "$path" update
+  fi
+  if [ "${2:-}" = '-pkg' ]; then
+    die "unknown CGL+ package: ${3:-}"
   fi
   if [ "${2:-}" = '-pkg' ] && [ "${3:-}" = 'rdp' ] && [ "${4:-}" = '-os' ] && [ "${5:-}" = '-ubuntu' ]; then
     path="$CGL_ROOT/scripts/CGL+-RDP-Ubuntu.sh"
@@ -247,7 +258,7 @@ update)
     [ -f "$path" ] || die 'Ubuntu update script is not installed'
     exec "$path"
   fi
-  [ "$#" -eq 1 ] || die 'usage: cgl update | cgl update -os <rpi|ubuntu> | cgl update -pkg rdp -os <-rpi|-ubuntu>'
+  [ "$#" -eq 1 ] || die 'usage: cgl update | cgl update -os <rpi|ubuntu> | cgl update -pkg <package> [-os <target>] [-key <project-key>]'
   pm_update "$pm"
   pm_upgrade "$pm"
   self_update "$pm"
