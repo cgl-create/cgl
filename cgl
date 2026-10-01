@@ -1,6 +1,6 @@
 #!/bin/sh
 set -eu
-CGL_VERSION="1.0.12"
+CGL_VERSION="1.0.13"
 
 # Debian packages install CGL under /usr/share/cgl. The bootstrap installer
 # uses /usr/local/share/cgl. Prefer the system location when present.
@@ -26,13 +26,17 @@ Usage:
   cgl run <script>
   cgl update
   cgl update -os rpi
+  cgl update -pkg skille-secret -os rpi -key aqs-skille-key1
   cgl update -os ubuntu
   cgl update -pkg rdp -os -rpi
+  cgl update -pkg skille-secret -os rpi -key aqs-skille-key1
   cgl install rdp -os rpi
+  cgl install skille-secret -os rpi
   cgl install -revoke rdp -os rpi
   cgl install -rst rdp -os rpi
   cgl install -fix rdp -os rpi
   cgl install rdp -os ubuntu
+  cgl run skille-secret -os rpi -key aqs-skille-key1
   cgl autoupdate
   cgl autoupdate on
   cgl autoupdate off
@@ -201,6 +205,12 @@ case "${1:-help}" in
 version|--version|-v) printf 'cgl %s\n' "$CGL_VERSION" ;;
 help|--help|-h) usage ;;
 run)
+  if [ "$#" -ge 2 ] && [ "$2" = "skille-secret" ]; then
+    [ "$3" = "-os" ] && [ "$4" = "rpi" ] && [ "$5" = "-key" ] && [ "$6" = "aqs-skille-key1" ] || die 'usage: cgl run skille-secret -os rpi -key aqs-skille-key1'
+    path="$CGL_ROOT/scripts/CGL+-SkillExpo-RPi.sh"
+    [ -f "$path" ] || die 'SkillExpo package script is not installed'
+    exec "$path" run -key aqs-skille-key1
+  fi
   [ "$#" -ge 2 ] || die 'usage: cgl run <script>'
   script="$2"
   case "$script" in */*) path="$script" ;; *) path="$CGL_ROOT/scripts/$script" ;; esac
@@ -215,6 +225,12 @@ update)
     path="$CGL_ROOT/scripts/CGL+-RDP-RPi.sh"
     [ -f "$path" ] || die 'Raspberry Pi RDP setup script is not installed'
     exec "$path" install
+  fi
+  if [ "${2:-}" = '-pkg' ] && [ "${3:-}" = 'skille-secret' ]; then
+    [ "${4:-}" = '-os' ] && [ "${5:-}" = 'rpi' ] && [ "${6:-}" = '-key' ] && [ "${7:-}" = 'aqs-skille-key1' ] || die 'usage: cgl update -pkg skille-secret -os rpi -key aqs-skille-key1'
+    path="$CGL_ROOT/scripts/CGL+-SkillExpo-RPi.sh"
+    [ -f "$path" ] || die 'SkillExpo package script is not installed'
+    exec "$path" update -key aqs-skille-key1
   fi
   if [ "${2:-}" = '-pkg' ] && [ "${3:-}" = 'rdp' ] && [ "${4:-}" = '-os' ] && [ "${5:-}" = '-ubuntu' ]; then
     path="$CGL_ROOT/scripts/CGL+-RDP-Ubuntu.sh"
@@ -250,6 +266,11 @@ install)
   #   cgl install -revoke rdp -os rpi
   #   cgl install -rst rdp -os rpi
   #   cgl install -fix rdp -os rpi
+  if [ "$#" -eq 4 ] && [ "$2" = "skille-secret" ] && [ "$3" = "-os" ] && [ "$4" = "rpi" ]; then
+    path="$CGL_ROOT/scripts/CGL+-SkillExpo-RPi.sh"
+    [ -f "$path" ] || die 'SkillExpo package script is not installed'
+    exec "$path" install
+  fi
   if [ "$#" -eq 4 ] && [ "$2" = "rdp" ] && [ "$3" = "-os" ]; then
     case "$4" in
       rpi)
