@@ -1,5 +1,16 @@
 #!/bin/sh
 set -eu
+
+# SkillExpo installation manages system-wide files and services. Re-exec through
+# sudo automatically so users can run cgl install without typing sudo.
+if [ "$(id -u)" -ne 0 ]; then
+  if command -v sudo >/dev/null 2>&1; then
+    exec sudo "$0" "$@"
+  fi
+  printf '%s\n' "CGL+ LabZ: root privileges are required and sudo is not installed." >&2
+  exit 1
+fi
+
 EXPECTED_KEY="aqs-skille-key1"
 ROOT="/opt/cgl-labz"
 RAW_BASE="https://raw.githubusercontent.com/cgl-create/cgl/main/packages/skille-secret/rpi"
@@ -33,21 +44,14 @@ install_project() {
   TOTAL_STEPS=7
   mkdir -p "$ROOT"
   printf '[1/%s] Preparing SkillExpo package ✓\n' "$TOTAL_STEPS"
-  printf '[2/%s] Downloading project files ' "$TOTAL_STEPS"
-  run_with_spinner "Downloading project files" curl -fsSL "$RAW_BASE/app.py" -o "$ROOT/app.py"
-  printf '[3/%s] Downloading package configuration ' "$TOTAL_STEPS"
-  run_with_spinner "Downloading package configuration" sh -c 'curl -fsSL "$1/requirements.txt" -o "$2/requirements.txt" && curl -fsSL "$1/cgl-labz.service" -o /tmp/cgl-labz.service' sh "$RAW_BASE" "$ROOT"
-  printf '[4/%s] Installing service configuration ' "$TOTAL_STEPS"
-  mkdir -p "$ROOT"
+  run_with_spinner "[2/$TOTAL_STEPS] Downloading project files" curl -fsSL "$RAW_BASE/app.py" -o "$ROOT/app.py"
+  run_with_spinner "[3/$TOTAL_STEPS] Downloading package configuration" sh -c 'curl -fsSL "$1/requirements.txt" -o "$2/requirements.txt" && curl -fsSL "$1/cgl-labz.service" -o /tmp/cgl-labz.service' sh "$RAW_BASE" "$ROOT"
   install -m 0644 /tmp/cgl-labz.service /etc/systemd/system/cgl-labz.service
   rm -f /tmp/cgl-labz.service
-  printf '\r[4/%s] Installing service configuration ✓\n' "$TOTAL_STEPS"
-  printf '[5/%s] Updating package index ' "$TOTAL_STEPS"
-  run_with_spinner "Updating package index" apt-get update
-  printf '[6/%s] Installing GPIO libraries ' "$TOTAL_STEPS"
-  run_with_spinner "Installing GPIO libraries" apt-get install -y python3-gpiozero python3-lgpio
-  printf '[7/%s] Enabling and restarting SkillExpo service ' "$TOTAL_STEPS"
-  run_with_spinner "Enabling and restarting SkillExpo service" sh -c 'systemctl daemon-reload && systemctl enable cgl-labz.service >/dev/null && systemctl restart cgl-labz.service'
+  printf '[4/%s] Installing service configuration ✓\n' "$TOTAL_STEPS"
+  run_with_spinner "[5/$TOTAL_STEPS] Updating package index" apt-get update
+  run_with_spinner "[6/$TOTAL_STEPS] Installing GPIO libraries" apt-get install -y python3-gpiozero python3-lgpio
+  run_with_spinner "[7/$TOTAL_STEPS] Enabling and restarting SkillExpo service" sh -c 'systemctl daemon-reload && systemctl enable cgl-labz.service >/dev/null && systemctl restart cgl-labz.service'
   rm -f "/tmp/cgl-skill-step-$$.log"
   printf '\nCGL+ LabZ | SkillExpo package successfully updated.\n'
 }
