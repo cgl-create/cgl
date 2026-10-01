@@ -31,6 +31,7 @@ install_project() {
   key="$1"
   check_key "$key"
   TOTAL_STEPS=7
+  mkdir -p "$ROOT"
   printf '[1/%s] Preparing SkillExpo package ✓\n' "$TOTAL_STEPS"
   printf '[2/%s] Downloading project files ' "$TOTAL_STEPS"
   run_with_spinner "Downloading project files" curl -fsSL "$RAW_BASE/app.py" -o "$ROOT/app.py"
