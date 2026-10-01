@@ -33,8 +33,15 @@ install)
   install_project "$key"
   ;;
 update)
-  [ "$2" = "-key" ] && [ "$3" = "$EXPECTED_KEY" ] || die "usage: cgl update -pkg skille-secret -os rpi -key aqs-skille-key1"
-  install_project "$3"
+  if [ "$#" -eq 1 ]; then
+    printf '%s\n' "CGL+ LabZ | SkillExpo Project Update"
+    printf '%s ' "Please Enter Your SkillExpo Project Key : "
+    read -r key
+  else
+    [ "$2" = "-key" ] && [ "$#" -eq 3 ] || die "usage: cgl update -pkg skille-secret [-os rpi] [-key <project-key>]"
+    key="$3"
+  fi
+  install_project "$key"
   printf '%s\n' "CGL+ LabZ | SkillExpo package updated."
   ;;
 run)
