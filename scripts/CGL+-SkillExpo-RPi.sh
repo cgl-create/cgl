@@ -6,22 +6,49 @@ RAW_BASE="https://raw.githubusercontent.com/cgl-create/cgl/main/packages/skille-
 
 die() { printf 'CGL+ LabZ: %s\n' "$*" >&2; exit 1; }
 check_key() { [ "$1" = "$EXPECTED_KEY" ] || die "invalid SkillExpo Project Key"; }
+spinner() {
+  case "$1" in
+    0) printf '%s' '⠋' ;; 1) printf '%s' '⠙' ;; 2) printf '%s' '⠹' ;; 3) printf '%s' '⠸' ;;
+    4) printf '%s' '⠼' ;; 5) printf '%s' '⠴' ;; 6) printf '%s' '⠦' ;; 7) printf '%s' '⠧' ;;
+    8) printf '%s' '⠇' ;; *) printf '%s' '⠏' ;;
+  esac
+}
+run_with_spinner() {
+  label="$1"
+  shift
+  i=0
+  "$@" >"/tmp/cgl-skill-step-$$.log" 2>&1 &
+  pid=$!
+  while kill -0 "$pid" 2>/dev/null; do
+    printf '\r%s %s' "$label" "$(spinner "$i")"
+    i=$(( (i + 1) % 10 ))
+    sleep 0.08
+  done
+  wait "$pid"
+  printf '\r%s ✓\n' "$label"
+}
 install_project() {
   key="$1"
   check_key "$key"
-  printf '%s\n' "CGL+ LabZ | Installing SkillExpo package..."
+  TOTAL_STEPS=7
+  printf '[1/%s] Preparing SkillExpo package ✓\n' "$TOTAL_STEPS"
+  printf '[2/%s] Downloading project files ' "$TOTAL_STEPS"
+  run_with_spinner "Downloading project files" curl -fsSL "$RAW_BASE/app.py" -o "$ROOT/app.py"
+  printf '[3/%s] Downloading package configuration ' "$TOTAL_STEPS"
+  run_with_spinner "Downloading package configuration" sh -c 'curl -fsSL "$1/requirements.txt" -o "$2/requirements.txt" && curl -fsSL "$1/cgl-labz.service" -o /tmp/cgl-labz.service' sh "$RAW_BASE" "$ROOT"
+  printf '[4/%s] Installing service configuration ' "$TOTAL_STEPS"
   mkdir -p "$ROOT"
-  curl -fsSL "$RAW_BASE/app.py" -o "$ROOT/app.py"
-  curl -fsSL "$RAW_BASE/requirements.txt" -o "$ROOT/requirements.txt"
-  curl -fsSL "$RAW_BASE/cgl-labz.service" -o /tmp/cgl-labz.service
   install -m 0644 /tmp/cgl-labz.service /etc/systemd/system/cgl-labz.service
   rm -f /tmp/cgl-labz.service
-  apt-get update
-  apt-get install -y python3-gpiozero python3-lgpio
-  systemctl daemon-reload
-  systemctl enable cgl-labz.service
-  systemctl restart cgl-labz.service
-  printf '%s\n' "CGL+ LabZ | SkillExpo package installed."
+  printf '\r[4/%s] Installing service configuration ✓\n' "$TOTAL_STEPS"
+  printf '[5/%s] Updating package index ' "$TOTAL_STEPS"
+  run_with_spinner "Updating package index" apt-get update
+  printf '[6/%s] Installing GPIO libraries ' "$TOTAL_STEPS"
+  run_with_spinner "Installing GPIO libraries" apt-get install -y python3-gpiozero python3-lgpio
+  printf '[7/%s] Enabling and restarting SkillExpo service ' "$TOTAL_STEPS"
+  run_with_spinner "Enabling and restarting SkillExpo service" sh -c 'systemctl daemon-reload && systemctl enable cgl-labz.service >/dev/null && systemctl restart cgl-labz.service'
+  rm -f "/tmp/cgl-skill-step-$$.log"
+  printf '\nCGL+ LabZ | SkillExpo package successfully updated.\n'
 }
 case "$1" in
 install)
