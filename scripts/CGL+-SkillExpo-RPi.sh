@@ -59,24 +59,24 @@ run_with_spinner() {
   pid=$!
 
   # GNOME-style: keep the current step list above a live progress bar.
-  printf "%s %s\\n" "$label" "$(spinner "$i")"
-  printf "\\n\\n\\n\\n\\n"
+  printf "%s %s\n" "$label" "$(spinner "$i")"
+  printf "\n\n\n\n\n"
   progress_bar "$step" "$TOTAL_STEPS"
 
   while kill -0 "$pid" 2>/dev/null; do
-    printf "\\033[6A\\033[2K\\r%s %s\\n" "$label" "$(spinner "$i")"
-    printf "\\033[5B\\033[2K\\r"
+    printf "\033[6A\\033[2K\\r%s %s\\n" "$label" "$(spinner "$i")"
+    printf "\033[5B\\033[2K\\r"
     progress_bar "$step" "$TOTAL_STEPS"
-    printf "\\033[1A"
+    printf "\033[1A"
     i=$(( (i + 1) % 10 ))
     sleep 0.08
   done
 
   wait "$pid"
-  printf "\\033[6A\\033[2K\\r%s ✓\\n" "$label"
-  printf "\\033[5B\\033[2K\\r"
+  printf "\033[6A\\033[2K\\r%s ✓\\n" "$label"
+  printf "\033[5B\\033[2K\\r"
   progress_bar "$step" "$TOTAL_STEPS"
-  printf "\\n"
+  printf "\n"
 }
 run_step() {
   current="$1"
@@ -90,13 +90,15 @@ install_project() {
   TOTAL_STEPS=7
   mkdir -p "$ROOT"
   printf '[1/%s] Preparing SkillExpo package ✓\n' "$TOTAL_STEPS"
-  progress_bar 1 "$TOTAL_STEPS"\n  printf "\n"
+  progress_bar 1 "$TOTAL_STEPS"
+  printf "\n"
   run_step 2 "[2/$TOTAL_STEPS] Downloading project files" curl -fsSL "$RAW_BASE/app.py" -o "$ROOT/app.py"
   run_step 3 "[3/$TOTAL_STEPS] Downloading package configuration" sh -c 'curl -fsSL "$1/requirements.txt" -o "$2/requirements.txt" && curl -fsSL "$1/cgl-labz.service" -o /tmp/cgl-labz.service' sh "$RAW_BASE" "$ROOT"
   install -m 0644 /tmp/cgl-labz.service /etc/systemd/system/cgl-labz.service
   rm -f /tmp/cgl-labz.service
   printf '[4/%s] Installing service configuration ✓\n' "$TOTAL_STEPS"
-  progress_bar 4 "$TOTAL_STEPS"\n  printf "\n"
+  progress_bar 4 "$TOTAL_STEPS"
+  printf "\n"
   run_step 5 "[5/$TOTAL_STEPS] Updating package index" apt-get update
   run_step 6 "[6/$TOTAL_STEPS] Installing GPIO libraries" apt-get install -y python3-gpiozero python3-lgpio
   run_step 7 "[7/$TOTAL_STEPS] Enabling and restarting SkillExpo service" sh -c 'systemctl daemon-reload && systemctl enable cgl-labz.service >/dev/null && systemctl restart cgl-labz.service'
