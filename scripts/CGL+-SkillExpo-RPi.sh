@@ -63,29 +63,29 @@ run_with_spinner() {
   # SSH wrappers, logs, and other non-TTY environments, ANSI cursor movement
   # becomes literal/repeated output, so emit one clean line per step instead.
   if [ -t 1 ]; then
-    printf '%s %s\\n' "$label" "$(spinner "$i")"
-    printf '\\n\\n\\n\\n\\n'
+    printf '%s %s\n' "$label" "$(spinner "$i")"
+    printf '\n\n\n\n\n'
     progress_bar "$step" "$TOTAL_STEPS"
 
     while kill -0 "$pid" 2>/dev/null; do
-      printf '\\033[6A\\033[2K\\r%s %s\\n' "$label" "$(spinner "$i")"
-      printf '\\033[5B\\033[2K\\r"
+      printf '\033[6A\033[2K\r%s %s\n' "$label" "$(spinner "$i")"
+      printf '\033[5B\033[2K\r'
       progress_bar "$step" "$TOTAL_STEPS"
-      printf '\\033[1A"
+      printf '\033[1A'
       i=$(( (i + 1) % 10 ))
       sleep 0.08
     done
 
     wait "$pid"
-    printf '\\033[6A\\033[2K\\r%s ✓\\n' "$label"
-    printf '\\033[5B\\033[2K\\r"
+    printf '\033[6A\033[2K\r%s ✓\n' "$label"
+    printf '\033[5B\033[2K\r'
     progress_bar "$step" "$TOTAL_STEPS"
-    printf '\\n'
+    printf '\n'
   else
     wait "$pid"
-    printf '%s ✓\\n' "$label"
+    printf '%s ✓\n' "$label"
     progress_bar "$step" "$TOTAL_STEPS"
-    printf '\\n'
+    printf '\n'
   fi
 
   rm -f "$log"
