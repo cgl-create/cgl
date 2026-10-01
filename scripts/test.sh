@@ -1,7 +1,7 @@
 #!/bin/sh
 set -eu
 ROOT="$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)"
-test "$("$ROOT/cgl" version)" = 'cgl 1.0.18'
+test "$("$ROOT/cgl" version)" = 'cgl 1.0.19'
 "$ROOT/cgl" help >/dev/null
 sh -n "$ROOT/cgl"
 sh -n "$ROOT/scripts/CGL+-RDP-RPi.sh"
@@ -30,6 +30,9 @@ grep -F 'raw.githubusercontent.com/cgl-create/cgl/gh-pages' "$ROOT/install.sh" >
 ! grep -F 'cgl-rdp-key.pem' "$ROOT/scripts/CGL+-RDP-Web.sh" >/dev/null
 grep -F 'CODESPACES' "$ROOT/scripts/CGL+-RDP-Web.sh" >/dev/null
 grep -F 'websockify' "$ROOT/scripts/CGL+-RDP-Web.sh" >/dev/null
+ grep -F 'NOVNC_VERSION="1.7.0"' "$ROOT/scripts/CGL+-RDP-Web.sh" >/dev/null
+ grep -F 'noVNC $NOVNC_VERSION' "$ROOT/scripts/CGL+-RDP-Web.sh" >/dev/null
+ ! grep -F '/usr/share/novnc' "$ROOT/scripts/CGL+-RDP-Web.sh" >/dev/null
 grep -F 'Xvfb "$DISPLAY_NUM"' "$ROOT/scripts/CGL+-RDP-Web.sh" >/dev/null
 grep -F 'metacity --replace' "$ROOT/scripts/CGL+-RDP-Web.sh" >/dev/null
 grep -F 'gnome-panel' "$ROOT/scripts/CGL+-RDP-Web.sh" >/dev/null
