@@ -51,25 +51,38 @@ show_progress() {
   printf "\n"
 }
 run_with_spinner() {
-  label="$1"
-  shift
+  step="$1"
+  label="$2"
+  shift 2
   i=0
-  "$@" >"/tmp/cgl-skill-step-$$.log" 2>&1 &
+  "$@" >"/tmp/cgl-skill-step-$.log" 2>&1 &
   pid=$!
+
+  # Keep the live step line above a fixed progress bar.
+  printf "%s %s\n" "$label" "$(spinner "$i")"
+  progress_bar "$step" "$TOTAL_STEPS"
+  printf "\n"
+
   while kill -0 "$pid" 2>/dev/null; do
-    printf "\r%s %s" "$label" "$(spinner "$i")"
+    printf "\033[2A\033[2K\r%s %s\n" "$label" "$(spinner "$i")"
+    printf "\033[2B\033[2K\r"
+    progress_bar "$step" "$TOTAL_STEPS"
+    printf "\033[1A"
     i=$(( (i + 1) % 10 ))
     sleep 0.08
   done
+
   wait "$pid"
-  printf "\r%s ✓\n" "$label"
+  printf "\033[2A\033[2K\r%s ✓\n" "$label"
+  printf "\033[2B\033[2K\r"
+  progress_bar "$step" "$TOTAL_STEPS"
+  printf "\n"
 }
 run_step() {
   current="$1"
   label="$2"
   shift 2
-  run_with_spinner "$label" "$@"
-  show_progress "$current" "$TOTAL_STEPS"
+  run_with_spinner "$current" "$label" "$@"
 }
 install_project() {
   key="$1"
