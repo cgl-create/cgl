@@ -2,6 +2,8 @@
 set -eu
 
 TARGET_LABEL="${1:-Linux}"
+NOVNC_VERSION="1.7.0"
+NOVNC_URL="https://github.com/novnc/noVNC/archive/refs/tags/v${NOVNC_VERSION}.tar.gz"
 CODESPACE_MODE=0
 if [ -n "${CODESPACES:-}" ] || [ -n "${CODESPACE_NAME:-}" ] || [ -n "${REMOTE_CONTAINERS:-}" ]; then
   CODESPACE_MODE=1
@@ -18,6 +20,34 @@ as_root() {
   fi
 }
 
+install_novnc() {
+  rdp_dir="$1"
+  novnc_dir="$rdp_dir/novnc"
+  version_file="$novnc_dir/.cgl-novnc-version"
+
+  if [ -f "$version_file" ] && [ "$(cat "$version_file" 2>/dev/null || true)" = "$NOVNC_VERSION" ] && [ -f "$novnc_dir/core/rfb.js" ]; then
+    printf '%s\n' "CGL+: noVNC $NOVNC_VERSION is already installed."
+    return 0
+  fi
+
+  tmp_dir="$(mktemp -d)"
+  trap 'rm -rf "$tmp_dir"' EXIT INT TERM
+  printf '%s\n' "CGL+: Installing noVNC $NOVNC_VERSION..."
+  curl -fsSL --proto '=https' --tlsv1.2 "$NOVNC_URL" -o "$tmp_dir/novnc.tar.gz"
+  tar -xzf "$tmp_dir/novnc.tar.gz" -C "$tmp_dir"
+  [ -f "$tmp_dir/noVNC-$NOVNC_VERSION/core/rfb.js" ] || {
+    printf '%s\n' "CGL+: Downloaded noVNC package is invalid." >&2
+    exit 1
+  }
+
+  as_root rm -rf "$novnc_dir"
+  as_root mv "$tmp_dir/noVNC-$NOVNC_VERSION" "$novnc_dir"
+  printf '%s\n' "$NOVNC_VERSION" | as_root tee "$version_file" >/dev/null
+  as_root chmod 0755 "$novnc_dir"
+  rm -rf "$tmp_dir"
+  trap - EXIT INT TERM
+}
+
 if [ "$CODESPACE_MODE" -eq 1 ]; then
   printf '%s\n' "[Codespace] Development/test environment detected."
   printf '%s\n' "CGL+: Starting a separate GNOME desktop for Codespace RDP."
@@ -32,20 +62,18 @@ if [ "$CODESPACE_MODE" -eq 1 ]; then
   chmod 700 "$RDP_STATE" "$RDP_STATE/runtime"
 
   printf '%s\n' "[1/5] Checking desktop and RDP dependencies..."
-  if ! command -v openssl >/dev/null 2>&1 || ! command -v websockify >/dev/null 2>&1 || [ ! -d /usr/share/novnc ] || ! command -v Xvfb >/dev/null 2>&1 || ! command -v x11vnc >/dev/null 2>&1 || ! command -v gnome-session >/dev/null 2>&1 || ! command -v gnome-flashback >/dev/null 2>&1; then
+  if ! command -v curl >/dev/null 2>&1 || ! command -v openssl >/dev/null 2>&1 || ! command -v websockify >/dev/null 2>&1 || ! command -v Xvfb >/dev/null 2>&1 || ! command -v x11vnc >/dev/null 2>&1 || ! command -v gnome-session >/dev/null 2>&1 || ! command -v gnome-flashback >/dev/null 2>&1; then
     printf '%s\n' "CGL+: Installing Codespace desktop/RDP dependencies..."
     as_root apt-get update
-    as_root apt-get install -y openssl novnc websockify xvfb x11vnc dbus-x11 gnome-session gnome-shell gnome-session-flashback
+    as_root apt-get install -y curl openssl websockify xvfb x11vnc dbus-x11 gnome-session gnome-shell gnome-session-flashback
   fi
 
   for tool in Xvfb x11vnc dbus-run-session gnome-session websockify; do
     command -v "$tool" >/dev/null 2>&1 || { printf '%s\n' "CGL+: Required tool missing: $tool" >&2; exit 1; }
   done
-  [ -d /usr/share/novnc ] || { printf '%s\n' "CGL+: noVNC files are missing." >&2; exit 1; }
-
   printf '%s\n' "[2/5] Preparing CGL+ browser gateway..."
   as_root mkdir -p "$RDP_DIR"
-  if [ ! -e "$RDP_DIR/novnc" ]; then as_root ln -s /usr/share/novnc "$RDP_DIR/novnc"; fi
+  install_novnc "$RDP_DIR"
   as_root chmod 0755 "$RDP_DIR"
   as_root sh -c 'cat > /usr/share/cgl/rdp-web/index.html' <<'EOF'
 <!doctype html>
@@ -169,11 +197,11 @@ else
 fi
 
 printf '%s\n' "[2/4] Preparing noVNC, WebSocket proxy and Avahi..."
-if ! command -v websockify >/dev/null 2>&1 || [ ! -d /usr/share/novnc ]; then
+if ! command -v curl >/dev/null 2>&1 || ! command -v websockify >/dev/null 2>&1; then
   as_root apt-get update
-  as_root apt-get install -y novnc websockify avahi-daemon
+  as_root apt-get install -y curl websockify avahi-daemon
 else
-  printf '%s\n' "CGL+: noVNC and WebSocket proxy are already installed."
+  printf '%s\n' "CGL+: WebSocket proxy dependencies are already installed."
 fi
 as_root apt-mark manual wayvnc 2>/dev/null || true
 
@@ -236,7 +264,7 @@ document.getElementById("disconnect").addEventListener("click",()=>{if(rfb)rfb.d
 </body>
 </html>
 EOF
-if [ ! -e /usr/share/cgl/rdp-web/novnc ]; then as_root ln -s /usr/share/novnc /usr/share/cgl/rdp-web/novnc; fi
+install_novnc /usr/share/cgl/rdp-web
 as_root chmod 0755 /usr/share/cgl/rdp-web
 as_root chmod 0644 /usr/share/cgl/rdp-web/index.html
 
