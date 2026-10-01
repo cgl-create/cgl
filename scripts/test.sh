@@ -1,12 +1,16 @@
 #!/bin/sh
 set -eu
 ROOT="$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)"
-test "$("$ROOT/cgl" version)" = 'cgl 1.0.12'
+test "$("$ROOT/cgl" version)" = 'cgl 1.0.13'
 "$ROOT/cgl" help >/dev/null
 sh -n "$ROOT/cgl"
 sh -n "$ROOT/scripts/CGL+-RDP-RPi.sh"
 sh -n "$ROOT/scripts/CGL+-RDP-Web.sh"
 sh -n "$ROOT/install.sh"
+sh -n "$ROOT/scripts/CGL+-SkillExpo-RPi.sh"
+grep -F 'cgl install skille-secret -os rpi' "$ROOT/cgl" >/dev/null
+grep -F 'cgl update -pkg skille-secret -os rpi -key aqs-skille-key1' "$ROOT/cgl" >/dev/null
+grep -F 'cgl run skille-secret -os rpi -key aqs-skille-key1' "$ROOT/cgl" >/dev/null
 
 for action in '-revoke' '-rst' '-fix'; do
   grep -F "[ \"\$2\" = \"$action\" ]" "$ROOT/cgl" >/dev/null
