@@ -74,6 +74,7 @@ CGL then delegates package operations to the host's native package manager.
     cgl install rdp -os rpi
     cgl install rdp -os ubuntu
     cgl install skille-secret -os rpi
+    cgl update -pkg <package>
     cgl update -pkg skille-secret -os rpi -key aqs-skille-key1
     cgl run skille-secret -os rpi -key aqs-skille-key1
     cgl autoupdate
