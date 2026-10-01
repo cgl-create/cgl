@@ -24,6 +24,32 @@ spinner() {
     8) printf '%s' '⠇' ;; *) printf '%s' '⠏' ;;
   esac
 }
+progress_bar() {
+  current="$1"
+  total="$2"
+  width=30
+  filled=$(( current * width / total ))
+  empty=$(( width - filled ))
+  bar=""
+  i=0
+  while [ "$i" -lt "$filled" ]; do
+    bar="${bar}█"
+    i=$((i + 1))
+  done
+  i=0
+  while [ "$i" -lt "$empty" ]; do
+    bar="${bar} "
+    i=$((i + 1))
+  done
+  printf "[%s] %s/%s" "$bar" "$current" "$total"
+}
+show_progress() {
+  current="$1"
+  total="$2"
+  printf "\r"
+  progress_bar "$current" "$total"
+  printf "\n"
+}
 run_with_spinner() {
   label="$1"
   shift
@@ -31,12 +57,19 @@ run_with_spinner() {
   "$@" >"/tmp/cgl-skill-step-$$.log" 2>&1 &
   pid=$!
   while kill -0 "$pid" 2>/dev/null; do
-    printf '\r%s %s' "$label" "$(spinner "$i")"
+    printf "\r%s %s" "$label" "$(spinner "$i")"
     i=$(( (i + 1) % 10 ))
     sleep 0.08
   done
   wait "$pid"
-  printf '\r%s ✓\n' "$label"
+  printf "\r%s ✓\n" "$label"
+}
+run_step() {
+  current="$1"
+  label="$2"
+  shift 2
+  run_with_spinner "$label" "$@"
+  show_progress "$current" "$TOTAL_STEPS"
 }
 install_project() {
   key="$1"
@@ -44,16 +77,20 @@ install_project() {
   TOTAL_STEPS=7
   mkdir -p "$ROOT"
   printf '[1/%s] Preparing SkillExpo package ✓\n' "$TOTAL_STEPS"
-  run_with_spinner "[2/$TOTAL_STEPS] Downloading project files" curl -fsSL "$RAW_BASE/app.py" -o "$ROOT/app.py"
-  run_with_spinner "[3/$TOTAL_STEPS] Downloading package configuration" sh -c 'curl -fsSL "$1/requirements.txt" -o "$2/requirements.txt" && curl -fsSL "$1/cgl-labz.service" -o /tmp/cgl-labz.service' sh "$RAW_BASE" "$ROOT"
+  show_progress 1 "$TOTAL_STEPS"
+  run_step 2 "[2/$TOTAL_STEPS] Downloading project files" curl -fsSL "$RAW_BASE/app.py" -o "$ROOT/app.py"
+  run_step 3 "[3/$TOTAL_STEPS] Downloading package configuration" sh -c 'curl -fsSL "$1/requirements.txt" -o "$2/requirements.txt" && curl -fsSL "$1/cgl-labz.service" -o /tmp/cgl-labz.service' sh "$RAW_BASE" "$ROOT"
   install -m 0644 /tmp/cgl-labz.service /etc/systemd/system/cgl-labz.service
   rm -f /tmp/cgl-labz.service
   printf '[4/%s] Installing service configuration ✓\n' "$TOTAL_STEPS"
-  run_with_spinner "[5/$TOTAL_STEPS] Updating package index" apt-get update
-  run_with_spinner "[6/$TOTAL_STEPS] Installing GPIO libraries" apt-get install -y python3-gpiozero python3-lgpio
-  run_with_spinner "[7/$TOTAL_STEPS] Enabling and restarting SkillExpo service" sh -c 'systemctl daemon-reload && systemctl enable cgl-labz.service >/dev/null && systemctl restart cgl-labz.service'
-  rm -f "/tmp/cgl-skill-step-$$.log"
-  printf '\nCGL+ LabZ | SkillExpo package successfully updated.\n'
+  show_progress 4 "$TOTAL_STEPS"
+  run_step 5 "[5/$TOTAL_STEPS] Updating package index" apt-get update
+  run_step 6 "[6/$TOTAL_STEPS] Installing GPIO libraries" apt-get install -y python3-gpiozero python3-lgpio
+  run_step 7 "[7/$TOTAL_STEPS] Enabling and restarting SkillExpo service" sh -c 'systemctl daemon-reload && systemctl enable cgl-labz.service >/dev/null && systemctl restart cgl-labz.service'
+  rm -f "/tmp/cgl-skill-step-$.log"
+  printf "\r"
+  progress_bar "$TOTAL_STEPS" "$TOTAL_STEPS"
+  printf '\n\nCGL+ LabZ | SkillExpo package successfully updated.\n'
 }
 case "$1" in
 install)
