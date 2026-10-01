@@ -240,9 +240,6 @@ update)
     fi
     exec "$path" update
   fi
-  if [ "${2:-}" = '-pkg' ]; then
-    die "unknown CGL+ package: ${3:-}"
-  fi
   if [ "${2:-}" = '-pkg' ] && [ "${3:-}" = 'rdp' ] && [ "${4:-}" = '-os' ] && [ "${5:-}" = '-ubuntu' ]; then
     path="$CGL_ROOT/scripts/CGL+-RDP-Ubuntu.sh"
     [ -f "$path" ] || die 'Ubuntu RDP setup script is not installed'
@@ -257,6 +254,9 @@ update)
     path="$CGL_ROOT/scripts/CGL+-Ubuntu-Update.sh"
     [ -f "$path" ] || die 'Ubuntu update script is not installed'
     exec "$path"
+  fi
+  if [ "${2:-}" = '-pkg' ]; then
+    die "unknown CGL+ package: ${3:-}"
   fi
   [ "$#" -eq 1 ] || die 'usage: cgl update | cgl update -os <rpi|ubuntu> | cgl update -pkg <package> [-os <target>] [-key <project-key>]'
   pm_update "$pm"
