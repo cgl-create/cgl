@@ -1,6 +1,7 @@
 #!/bin/sh
 set -eu
 
+SCRIPT_DIR="$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)"
 TARGET_LABEL="${1:-Linux}"
 NOVNC_VERSION="1.7.0"
 NOVNC_URL="https://github.com/novnc/noVNC/archive/refs/tags/v${NOVNC_VERSION}.tar.gz"
@@ -270,7 +271,7 @@ function startRDP(username,password){
   rfb.scaleViewport=true;rfb.clipViewport=true;rfb.resizeSession=false;
   rfb.addEventListener("connect",()=>{login.style.display="none";desktop.style.display="block";status.textContent="Connected";connect.disabled=false;connect.textContent="Connect";rfb.focus();});
   rfb.addEventListener("credentialsrequired",()=>rfb.sendCredentials(savedCredentials));
-  rfb.addEventListener("securityfailure",e=>{showError(e.detail?.reason||"Authentication failed.");try{rfb.disconnect();}catch(_){}}); 
+  rfb.addEventListener("securityfailure",e=>{showError(e.detail?.reason||"Authentication failed.");try{rfb.disconnect();}catch(_){}});
   rfb.addEventListener("disconnect",e=>{desktop.style.display="none";login.style.display="grid";connect.disabled=false;connect.textContent="Connect";status.textContent=e.detail?.clean?"Disconnected":"Connection lost";if(!e.detail?.clean&&error.style.display==="none")showError("The remote desktop disconnected.");rfb=null;});
 }
 form.addEventListener("submit",e=>{e.preventDefault();startRDP(document.getElementById("username").value.trim(),document.getElementById("password").value);});
