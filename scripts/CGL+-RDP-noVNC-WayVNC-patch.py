@@ -104,8 +104,9 @@ if old not in rfb_text:
     raise SystemExit("CGL+: noVNC RA2 async call did not match 1.7.0.")
 rfb_text = rfb_text.replace(old, new, 1)
 
-# Make the existing RA2 implementation parameterised for the RSA-AES-256
-# variant used by neatvnc: 32-byte randoms, SHA-256 and a 256-bit AES-EAX key.
+# Parameterize the existing RA2 implementation for RSA-AES-256.
+# Per the RFB RSA-AES-256 specification, the RSA randoms remain 16 bytes;
+# only SHA-1 -> SHA-256 and the resulting AES key length/hash length change.
 old = """    async negotiateRA2neAuthAsync() {
         this._hasStarted = true;
 """
@@ -119,53 +120,37 @@ if old not in ra2_text:
     raise SystemExit("CGL+: noVNC ra2.js entry point did not match 1.7.0.")
 ra2_text = ra2_text.replace(old, new, 1)
 
-ra2_text = ra2_text.replace(
-    "const clientRandom = new Uint8Array(16);",
-    "const clientRandom = new Uint8Array(16);",
-    1,
-)
-ra2_text = ra2_text.replace(
-    "clientRandomMessage[0] = (serverKeyBytes & 0xff00) >>> 8;",
-    "clientRandomMessage[0] = (serverKeyBytes & 0xff00) >>> 8;",
-    1,
-)
-ra2_text = ra2_text.replace(
-    "const serverRandom = await legacyCrypto.decrypt(\n            { name: \"RSA-PKCS1-v1_5\" }, clientRSACipher, serverEncryptedRandom);\n        if (serverRandom === null || serverRandom.length !== 16) {",
-    "const serverRandom = await legacyCrypto.decrypt(\n            { name: \"RSA-PKCS1-v1_5\" }, clientRSACipher, serverEncryptedRandom);\n        if (serverRandom === null || serverRandom.length !== 16) {",
-    1,
-)
-ra2_text = ra2_text.replace(
-    "let clientSessionKey = new Uint8Array(32);\n        let serverSessionKey = new Uint8Array(32);\n        clientSessionKey.set(serverRandom);\n        clientSessionKey.set(clientRandom, 16);\n        serverSessionKey.set(clientRandom);\n        serverSessionKey.set(serverRandom, 16);",
-    "let clientSessionKey = new Uint8Array(challengeLength * 2);\n        let serverSessionKey = new Uint8Array(challengeLength * 2);\n        clientSessionKey.set(serverRandom);\n        clientSessionKey.set(clientRandom, challengeLength);\n        serverSessionKey.set(clientRandom);\n        serverSessionKey.set(serverRandom, challengeLength);",
-    1,
-)
-ra2_text = ra2_text.replace(
-    'clientSessionKey = await window.crypto.subtle.digest("SHA-1", clientSessionKey);\n        clientSessionKey = new Uint8Array(clientSessionKey).slice(0, 16);\n        serverSessionKey = await window.crypto.subtle.digest("SHA-1", serverSessionKey);\n        serverSessionKey = new Uint8Array(serverSessionKey).slice(0, 16);',
-    'clientSessionKey = await window.crypto.subtle.digest(hashAlgorithm, clientSessionKey);\n        clientSessionKey = new Uint8Array(clientSessionKey).slice(0, sessionKeyLength);\n        serverSessionKey = await window.crypto.subtle.digest(hashAlgorithm, serverSessionKey);\n        serverSessionKey = new Uint8Array(serverSessionKey).slice(0, sessionKeyLength);',
-    1,
-)
-ra2_text = ra2_text.replace(
-    "serverHash = await window.crypto.subtle.digest(\"SHA-1\", serverHash);\n        clientHash = await window.crypto.subtle.digest(\"SHA-1\", clientHash);",
-    "serverHash = await window.crypto.subtle.digest(hashAlgorithm, serverHash);\n        clientHash = await window.crypto.subtle.digest(hashAlgorithm, clientHash);",
-    1,
-)
-ra2_text = ra2_text.replace(
-    "await this._waitSockAsync(2 + 20 + 16);\n        if (this._sock.rQshift16() !== 20) {",
-    "await this._waitSockAsync(2 + hashLength + 16);\n        if (this._sock.rQshift16() !== hashLength) {",
-    1,
-)
-ra2_text = ra2_text.replace(
-    "20, this._sock.rQshiftBytes(20 + 16));",
-    "hashLength, this._sock.rQshiftBytes(hashLength + 16));",
-    1,
-)
-ra2_text = ra2_text.replace(
-    "for (let i = 0; i < 20; i++) {",
-    "for (let i = 0; i < hashLength; i++) {",
-    1,
-)
+old = 'clientSessionKey = await window.crypto.subtle.digest("SHA-1", clientSessionKey);\n        clientSessionKey = new Uint8Array(clientSessionKey).slice(0, 16);\n        serverSessionKey = await window.crypto.subtle.digest("SHA-1", serverSessionKey);\n        serverSessionKey = new Uint8Array(serverSessionKey).slice(0, 16);'
+new = 'clientSessionKey = await window.crypto.subtle.digest(hashAlgorithm, clientSessionKey);\n        clientSessionKey = new Uint8Array(clientSessionKey).slice(0, sessionKeyLength);\n        serverSessionKey = await window.crypto.subtle.digest(hashAlgorithm, serverSessionKey);\n        serverSessionKey = new Uint8Array(serverSessionKey).slice(0, sessionKeyLength);'
+if old not in ra2_text:
+    raise SystemExit("CGL+: noVNC RA2 key derivation block did not match 1.7.0.")
+ra2_text = ra2_text.replace(old, new, 1)
 
-if "challengeLength" not in ra2_text or "hashAlgorithm" not in ra2_text:
+old = 'serverHash = await window.crypto.subtle.digest("SHA-1", serverHash);\n        clientHash = await window.crypto.subtle.digest("SHA-1", clientHash);'
+new = 'serverHash = await window.crypto.subtle.digest(hashAlgorithm, serverHash);\n        clientHash = await window.crypto.subtle.digest(hashAlgorithm, clientHash);'
+if old not in ra2_text:
+    raise SystemExit("CGL+: noVNC RA2 hash block did not match 1.7.0.")
+ra2_text = ra2_text.replace(old, new, 1)
+
+old = 'await this._waitSockAsync(2 + 20 + 16);\n        if (this._sock.rQshift16() !== 20) {'
+new = 'await this._waitSockAsync(2 + hashLength + 16);\n        if (this._sock.rQshift16() !== hashLength) {'
+if old not in ra2_text:
+    raise SystemExit("CGL+: noVNC RA2 server-hash length block did not match 1.7.0.")
+ra2_text = ra2_text.replace(old, new, 1)
+
+old = '20, this._sock.rQshiftBytes(20 + 16));'
+new = 'hashLength, this._sock.rQshiftBytes(hashLength + 16));'
+if old not in ra2_text:
+    raise SystemExit("CGL+: noVNC RA2 server-hash payload block did not match 1.7.0.")
+ra2_text = ra2_text.replace(old, new, 1)
+
+old = 'for (let i = 0; i < 20; i++) {'
+new = 'for (let i = 0; i < hashLength; i++) {'
+if old not in ra2_text:
+    raise SystemExit("CGL+: noVNC RA2 server-hash compare block did not match 1.7.0.")
+ra2_text = ra2_text.replace(old, new, 1)
+
+if "hashAlgorithm" not in ra2_text or "hashLength" not in ra2_text:
     raise SystemExit("CGL+: RSA-AES-256 patch verification failed.")
 
 rfb.write_text(rfb_text, encoding="utf-8")
