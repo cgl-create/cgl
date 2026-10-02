@@ -31,7 +31,8 @@ grep -F 'raw.githubusercontent.com/cgl-create/cgl/gh-pages' "$ROOT/install.sh" >
 grep -F 'CODESPACES' "$ROOT/scripts/CGL+-RDP-Web.sh" >/dev/null
 grep -F 'websockify' "$ROOT/scripts/CGL+-RDP-Web.sh" >/dev/null
  grep -F 'NOVNC_VERSION="1.7.0"' "$ROOT/scripts/CGL+-RDP-Web.sh" >/dev/null
- grep -F 'noVNC $NOVNC_VERSION' "$ROOT/scripts/CGL+-RDP-Web.sh" >/dev/null
+ grep -F 'NOVNC_VERSION="1.7.0"' "$ROOT/scripts/CGL+-RDP-Web.sh" >/dev/null
+grep -F 'NOVNC_URL="https://github.com/novnc/noVNC/archive/refs/tags/v${NOVNC_VERSION}.tar.gz"' "$ROOT/scripts/CGL+-RDP-Web.sh" >/dev/null
  ! grep -F '/usr/share/novnc' "$ROOT/scripts/CGL+-RDP-Web.sh" >/dev/null
 grep -F 'Xvfb "$DISPLAY_NUM"' "$ROOT/scripts/CGL+-RDP-Web.sh" >/dev/null
 grep -F 'metacity --replace' "$ROOT/scripts/CGL+-RDP-Web.sh" >/dev/null
