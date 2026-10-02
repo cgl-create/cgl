@@ -75,7 +75,6 @@ new = """            case securityTypePlain:
             // CGL_WAYVNC_RSA_AES256_PATCH
             case securityTypeRSA_AES256:
                 return this._negotiateRA2neAuth({
-                    challengeLength: 32,
                     hashAlgorithm: "SHA-256",
                     sessionKeyLength: 32,
                     hashLength: 32,
@@ -111,7 +110,6 @@ old = """    async negotiateRA2neAuthAsync() {
         this._hasStarted = true;
 """
 new = """    async negotiateRA2neAuthAsync(options = {}) {
-        const challengeLength = options.challengeLength || 16;
         const hashAlgorithm = options.hashAlgorithm || "SHA-1";
         const sessionKeyLength = options.sessionKeyLength || 16;
         const hashLength = options.hashLength || 20;
@@ -123,7 +121,7 @@ ra2_text = ra2_text.replace(old, new, 1)
 
 ra2_text = ra2_text.replace(
     "const clientRandom = new Uint8Array(16);",
-    "const clientRandom = new Uint8Array(challengeLength);",
+    "const clientRandom = new Uint8Array(16);",
     1,
 )
 ra2_text = ra2_text.replace(
@@ -133,7 +131,7 @@ ra2_text = ra2_text.replace(
 )
 ra2_text = ra2_text.replace(
     "const serverRandom = await legacyCrypto.decrypt(\n            { name: \"RSA-PKCS1-v1_5\" }, clientRSACipher, serverEncryptedRandom);\n        if (serverRandom === null || serverRandom.length !== 16) {",
-    "const serverRandom = await legacyCrypto.decrypt(\n            { name: \"RSA-PKCS1-v1_5\" }, clientRSACipher, serverEncryptedRandom);\n        if (serverRandom === null || serverRandom.length !== challengeLength) {",
+    "const serverRandom = await legacyCrypto.decrypt(\n            { name: \"RSA-PKCS1-v1_5\" }, clientRSACipher, serverEncryptedRandom);\n        if (serverRandom === null || serverRandom.length !== 16) {",
     1,
 )
 ra2_text = ra2_text.replace(
