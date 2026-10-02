@@ -68,19 +68,7 @@ if old not in rfb_text:
 
 rfb_text = rfb_text.replace(old, new, 1)
 
-old = """            case securityTypePlain:
-                return this._negotiatePlainAuth();
-            // CGL_WAYVNC_RSA_AES256_PATCH
-            case securityTypeRSA_AES256:
-                return this._negotiateRA2neAuth({
-                    challengeLength: 32,
-                    hashAlgorithm: "SHA-256",
-                    sessionKeyLength: 32,
-                    hashLength: 32,
-                });
-
-            case securityTypeRA2ne:
-"""
+old = """            case securityTypePlain:\n                return this._negotiatePlainAuth();\n            case securityTypeRA2ne:\n"""
 new = """            case securityTypePlain:
                 return this._negotiatePlainAuth();
             // CGL_WAYVNC_RSA_AES256_PATCH
