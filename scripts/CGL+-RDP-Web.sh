@@ -4,6 +4,7 @@ set -eu
 TARGET_LABEL="${1:-Linux}"
 NOVNC_VERSION="1.7.0"
 NOVNC_URL="https://github.com/novnc/noVNC/archive/refs/tags/v${NOVNC_VERSION}.tar.gz"
+NOVNC_PATCHER="$SCRIPT_DIR/CGL+-RDP-noVNC-WayVNC-patch.py"
 CODESPACE_MODE=0
 if [ -n "${CODESPACES:-}" ] || [ -n "${CODESPACE_NAME:-}" ] || [ -n "${REMOTE_CONTAINERS:-}" ]; then
   CODESPACE_MODE=1
@@ -20,6 +21,19 @@ as_root() {
   fi
 }
 
+patch_novnc() {
+  novnc_dir="$1"
+  if ! command -v python3 >/dev/null 2>&1; then
+    printf '%s\n' "CGL+: python3 is required to apply the WayVNC noVNC compatibility patch." >&2
+    exit 1
+  fi
+  [ -f "$NOVNC_PATCHER" ] || {
+    printf '%s\n' "CGL+: noVNC WayVNC patcher is missing: $NOVNC_PATCHER" >&2
+    exit 1
+  }
+  as_root python3 "$NOVNC_PATCHER" "$novnc_dir"
+}
+
 install_novnc() {
   rdp_dir="$1"
   novnc_dir="$rdp_dir/novnc"
@@ -27,6 +41,7 @@ install_novnc() {
 
   if [ -f "$version_file" ] && [ "$(cat "$version_file" 2>/dev/null || true)" = "$NOVNC_VERSION" ] && [ -f "$novnc_dir/core/rfb.js" ]; then
     printf '%s\n' "CGL+: noVNC $NOVNC_VERSION is already installed."
+    patch_novnc "$novnc_dir"
     return 0
   fi
 
@@ -42,6 +57,7 @@ install_novnc() {
 
   as_root rm -rf "$novnc_dir"
   as_root mv "$tmp_dir/noVNC-$NOVNC_VERSION" "$novnc_dir"
+  patch_novnc "$novnc_dir"
   printf '%s\n' "$NOVNC_VERSION" | as_root tee "$version_file" >/dev/null
   as_root chmod 0755 "$novnc_dir"
   rm -rf "$tmp_dir"
@@ -62,10 +78,10 @@ if [ "$CODESPACE_MODE" -eq 1 ]; then
   chmod 700 "$RDP_STATE" "$RDP_STATE/runtime"
 
   printf '%s\n' "[1/5] Checking desktop and RDP dependencies..."
-  if ! command -v curl >/dev/null 2>&1 || ! command -v openssl >/dev/null 2>&1 || ! command -v websockify >/dev/null 2>&1 || ! command -v Xvfb >/dev/null 2>&1 || ! command -v x11vnc >/dev/null 2>&1 || ! command -v gnome-session >/dev/null 2>&1 || ! command -v gnome-flashback >/dev/null 2>&1; then
+  if ! command -v curl >/dev/null 2>&1 || ! command -v openssl >/dev/null 2>&1 || ! command -v websockify >/dev/null 2>&1 || ! command -v python3 >/dev/null 2>&1 || ! command -v Xvfb >/dev/null 2>&1 || ! command -v x11vnc >/dev/null 2>&1 || ! command -v gnome-session >/dev/null 2>&1 || ! command -v gnome-flashback >/dev/null 2>&1; then
     printf '%s\n' "CGL+: Installing Codespace desktop/RDP dependencies..."
     as_root apt-get update
-    as_root apt-get install -y curl openssl websockify xvfb x11vnc dbus-x11 gnome-session gnome-shell gnome-session-flashback
+    as_root apt-get install -y curl openssl websockify python3 xvfb x11vnc dbus-x11 gnome-session gnome-shell gnome-session-flashback
   fi
 
   for tool in Xvfb x11vnc dbus-run-session gnome-session websockify; do
@@ -197,9 +213,9 @@ else
 fi
 
 printf '%s\n' "[2/4] Preparing noVNC, WebSocket proxy and Avahi..."
-if ! command -v curl >/dev/null 2>&1 || ! command -v websockify >/dev/null 2>&1; then
+if ! command -v curl >/dev/null 2>&1 || ! command -v websockify >/dev/null 2>&1 || ! command -v python3 >/dev/null 2>&1; then
   as_root apt-get update
-  as_root apt-get install -y curl websockify avahi-daemon
+  as_root apt-get install -y curl websockify avahi-daemon python3
 else
   printf '%s\n' "CGL+: WebSocket proxy dependencies are already installed."
 fi
