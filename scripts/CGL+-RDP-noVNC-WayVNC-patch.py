@@ -68,9 +68,10 @@ if old not in rfb_text:
 
 rfb_text = rfb_text.replace(old, new, 1)
 
-old = """            case securityTypePlain:\n                return this._negotiatePlainAuth();\n            case securityTypeRA2ne:\n"""
+old = """            case securityTypePlain:\n                return this._negotiatePlainAuth();\n\n            case securityTypeUnixLogon:\n                return this._negotiateTightUnixAuth();\n\n            case securityTypeRA2ne:\n"""
 new = """            case securityTypePlain:
                 return this._negotiatePlainAuth();
+
             // CGL_WAYVNC_RSA_AES256_PATCH
             case securityTypeRSA_AES256:
                 return this._negotiateRA2neAuth({
