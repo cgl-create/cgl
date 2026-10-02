@@ -20,7 +20,7 @@ if marker in rfb_text and marker in ra2_text:
     print("CGL+: WayVNC RSA-AES-256 noVNC patch is already applied.")
     raise SystemExit(0)
 
-if not re.search(r"const\\s+securityTypeUnixLogon\\s*=\\s*129\\s*;", rfb_text):
+if not re.search(r"const\s+securityTypeUnixLogon\s*=\s*129\s*;", rfb_text):
     raise SystemExit("CGL+: noVNC 1.7.0 security-type layout changed; refusing unsafe patch.")
 
 # WayVNC/neatvnc uses RFB security type 129 for RSA-AES-256. noVNC 1.7.0
