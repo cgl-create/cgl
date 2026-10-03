@@ -1,0 +1,19 @@
+Origin: CGL+
+Label: CGL+
+Suite: stable
+Codename: stable
+Architectures: amd64 arm64 armhf i386 all
+Components: main
+Description: CGL+ Debian package repository
+Date: Sat, 03 Oct 2026 17:13:01 +0000
+SHA256:
+ 1848150075ae636f6128ba7b1de6a9814aa0e35211d79a82f929d3df9937b83b 516 main/binary-all/Packages
+ 3783e9a2d8c31e52e0640d08f81c966eed6e8c6e59b63b218bb62e388430dafb 378 main/binary-all/Packages.gz
+ 1848150075ae636f6128ba7b1de6a9814aa0e35211d79a82f929d3df9937b83b 516 main/binary-amd64/Packages
+ 3783e9a2d8c31e52e0640d08f81c966eed6e8c6e59b63b218bb62e388430dafb 378 main/binary-amd64/Packages.gz
+ 1848150075ae636f6128ba7b1de6a9814aa0e35211d79a82f929d3df9937b83b 516 main/binary-arm64/Packages
+ 3783e9a2d8c31e52e0640d08f81c966eed6e8c6e59b63b218bb62e388430dafb 378 main/binary-arm64/Packages.gz
+ 1848150075ae636f6128ba7b1de6a9814aa0e35211d79a82f929d3df9937b83b 516 main/binary-armhf/Packages
+ 3783e9a2d8c31e52e0640d08f81c966eed6e8c6e59b63b218bb62e388430dafb 378 main/binary-armhf/Packages.gz
+ 1848150075ae636f6128ba7b1de6a9814aa0e35211d79a82f929d3df9937b83b 516 main/binary-i386/Packages
+ 3783e9a2d8c31e52e0640d08f81c966eed6e8c6e59b63b218bb62e388430dafb 378 main/binary-i386/Packages.gz
