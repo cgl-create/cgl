@@ -48,10 +48,51 @@ async function tick(){try{let r=await fetch('/api/status',{cache:'no-store'}),d=
 class Handler(BaseHTTPRequestHandler):
     def do_GET(self):
         status, remaining = state()
-        if self.path == "/api/status":
-            body=json.dumps({"status":status,"remaining":remaining,"alert":status=="ALERT","sensor":int(sensor.value)}).encode()
-            self.send_response(200); self.send_header("Content-Type","application/json"); self.send_header("Cache-Control","no-store"); self.send_header("Content-Length",str(len(body))); self.end_headers(); self.wfile.write(body); return
-        body=PAGE.encode(); self.send_response(200); self.send_header("Content-Type","text/html; charset=utf-8"); self.send_header("Content-Length",str(len(body))); self.end_headers(); self.wfile.write(body)
+        path = self.path.split("?", 1)[0].rstrip("/") or "/"
+
+        # Cloudflare Tunnel forwards the complete published path to localhost:5000.
+        # Match these endpoints by suffix so the app works behind:
+        # /skille/path/aqs/keys/2
+        # without requiring Cloudflare to strip the path.
+        if path.endswith("/health"):
+            body = json.dumps({
+                "status": "online",
+                "device": "cgl-labz",
+                "timestamp": int(time.time()),
+                "project_status": status,
+                "remaining": remaining
+            }).encode()
+            self.send_response(200)
+            self.send_header("Content-Type", "application/json")
+            self.send_header("Cache-Control", "no-store")
+            self.send_header("Content-Length", str(len(body)))
+            self.end_headers()
+            self.wfile.write(body)
+            return
+
+        if path.endswith("/api/status"):
+            body = json.dumps({
+                "status": status,
+                "remaining": remaining,
+                "alert": status == "ALERT",
+                "sensor": int(sensor.value)
+            }).encode()
+            self.send_response(200)
+            self.send_header("Content-Type", "application/json")
+            self.send_header("Cache-Control", "no-store")
+            self.send_header("Content-Length", str(len(body)))
+            self.end_headers()
+            self.wfile.write(body)
+            return
+
+        body = PAGE.encode()
+        self.send_response(200)
+        self.send_header("Content-Type", "text/html; charset=utf-8")
+        self.send_header("Cache-Control", "no-store")
+        self.send_header("Content-Security-Policy", "frame-ancestors *")
+        self.send_header("Content-Length", str(len(body)))
+        self.end_headers()
+        self.wfile.write(body)
     def log_message(self, *_): pass
 
 if __name__ == "__main__":
