@@ -12,6 +12,7 @@ cp "$ROOT/scripts/CGL+-RDP-Ubuntu.sh" "$ROOT/package/usr/share/cgl/scripts/CGL+-
 cp "$ROOT/scripts/CGL+-RDP-Web.sh" "$ROOT/package/usr/share/cgl/scripts/CGL+-RDP-Web.sh"
 cp "$ROOT/scripts/CGL+-RDP-noVNC-WayVNC-patch.py" "$ROOT/package/usr/share/cgl/scripts/CGL+-RDP-noVNC-WayVNC-patch.py"
 cp "$ROOT/scripts/CGL+-SkillExpo-RPi.sh" "$ROOT/package/usr/share/cgl/scripts/CGL+-SkillExpo-RPi.sh"
-chmod 0755 "$ROOT/package/usr/share/cgl/cgl" "$ROOT/package/usr/share/cgl/scripts/CGL+-RPiOS-Update.sh" "$ROOT/package/usr/share/cgl/scripts/CGL+-Ubuntu-Update.sh" "$ROOT/package/usr/share/cgl/scripts/CGL+-RDP-RPi.sh" "$ROOT/package/usr/share/cgl/scripts/CGL+-RDP-Ubuntu.sh" "$ROOT/package/usr/share/cgl/scripts/CGL+-RDP-Web.sh" "$ROOT/package/usr/share/cgl/scripts/CGL+-RDP-noVNC-WayVNC-patch.py" "$ROOT/package/usr/share/cgl/scripts/CGL+-SkillExpo-RPi.sh" "$ROOT/package/usr/bin/cgl" "$ROOT/package/DEBIAN/postinst"
+cp "$ROOT/scripts/CGL+-Umbrel.sh" "$ROOT/package/usr/share/cgl/scripts/CGL+-Umbrel.sh"
+chmod 0755 "$ROOT/package/usr/share/cgl/cgl" "$ROOT/package/usr/share/cgl/scripts/CGL+-RPiOS-Update.sh" "$ROOT/package/usr/share/cgl/scripts/CGL+-Ubuntu-Update.sh" "$ROOT/package/usr/share/cgl/scripts/CGL+-RDP-RPi.sh" "$ROOT/package/usr/share/cgl/scripts/CGL+-RDP-Ubuntu.sh" "$ROOT/package/usr/share/cgl/scripts/CGL+-RDP-Web.sh" "$ROOT/package/usr/share/cgl/scripts/CGL+-RDP-noVNC-WayVNC-patch.py" "$ROOT/package/usr/share/cgl/scripts/CGL+-SkillExpo-RPi.sh" "$ROOT/package/usr/share/cgl/scripts/CGL+-Umbrel.sh" "$ROOT/package/usr/bin/cgl" "$ROOT/package/DEBIAN/postinst"
 dpkg-deb --build --root-owner-group "$ROOT/package" "$OUT/cgl_${VERSION}_all.deb"
 echo "Built $OUT/cgl_${VERSION}_all.deb"
