@@ -1,14 +1,17 @@
 #!/bin/sh
 set -eu
 ROOT="$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)"
-test "$("$ROOT/cgl" version)" = 'cgl 1.0.27'
+test "$("$ROOT/cgl" version)" = 'cgl 1.0.28'
 "$ROOT/cgl" help >/dev/null
 sh -n "$ROOT/cgl"
 sh -n "$ROOT/scripts/CGL+-RDP-RPi.sh"
 sh -n "$ROOT/scripts/CGL+-RDP-Web.sh"
+sh -n "$ROOT/scripts/CGL+-Umbrel.sh"
 sh -n "$ROOT/install.sh"
 sh -n "$ROOT/scripts/CGL+-SkillExpo-RPi.sh"
 grep -F 'cgl install skille-secret -os rpi' "$ROOT/cgl" >/dev/null
+grep -F 'cgl install umbrel' "$ROOT/cgl" >/dev/null
+grep -F 'CGL+-Umbrel.sh' "$ROOT/cgl" >/dev/null
 grep -F 'cgl update -pkg <package>' "$ROOT/cgl" >/dev/null
 grep -F 'cgl update -pkg skille-secret -os rpi -key aqs-skille-key1' "$ROOT/cgl" >/dev/null
 grep -F 'cgl run skille-secret -os rpi -key aqs-skille-key1' "$ROOT/cgl" >/dev/null
@@ -30,10 +33,9 @@ grep -F 'raw.githubusercontent.com/cgl-create/cgl/gh-pages' "$ROOT/install.sh" >
 ! grep -F 'cgl-rdp-key.pem' "$ROOT/scripts/CGL+-RDP-Web.sh" >/dev/null
 grep -F 'CODESPACES' "$ROOT/scripts/CGL+-RDP-Web.sh" >/dev/null
 grep -F 'websockify' "$ROOT/scripts/CGL+-RDP-Web.sh" >/dev/null
- grep -F 'NOVNC_VERSION="1.7.0"' "$ROOT/scripts/CGL+-RDP-Web.sh" >/dev/null
- grep -F 'NOVNC_VERSION="1.7.0"' "$ROOT/scripts/CGL+-RDP-Web.sh" >/dev/null
+grep -F 'NOVNC_VERSION="1.7.0"' "$ROOT/scripts/CGL+-RDP-Web.sh" >/dev/null
 grep -F 'NOVNC_URL="https://github.com/novnc/noVNC/archive/refs/tags/v${NOVNC_VERSION}.tar.gz"' "$ROOT/scripts/CGL+-RDP-Web.sh" >/dev/null
- ! grep -F '/usr/share/novnc' "$ROOT/scripts/CGL+-RDP-Web.sh" >/dev/null
+! grep -F '/usr/share/novnc' "$ROOT/scripts/CGL+-RDP-Web.sh" >/dev/null
 grep -F 'Xvfb "$DISPLAY_NUM"' "$ROOT/scripts/CGL+-RDP-Web.sh" >/dev/null
 grep -F 'metacity --replace' "$ROOT/scripts/CGL+-RDP-Web.sh" >/dev/null
 grep -F 'gnome-panel' "$ROOT/scripts/CGL+-RDP-Web.sh" >/dev/null
