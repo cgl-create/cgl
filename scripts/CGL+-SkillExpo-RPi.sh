@@ -104,7 +104,7 @@ install_project() {
   printf '[1/%s] Preparing SkillExpo package ✓\n' "$TOTAL_STEPS"
   progress_bar 1 "$TOTAL_STEPS"
   printf "\n"
-  run_step 2 "[2/$TOTAL_STEPS] Downloading project files" curl -fsSL "$RAW_BASE/app.py" -o "$ROOT/app.py"
+  run_step 2 "[2/$TOTAL_STEPS] Downloading project files" curl -fsSL "$RAW_BASE/app.py" -o "$ROOT/app.py" && curl -fsSL "$RAW_BASE/microbit.py" -o "$ROOT/microbit.py"
   run_step 3 "[3/$TOTAL_STEPS] Downloading package configuration" sh -c 'curl -fsSL "$1/requirements.txt" -o "$2/requirements.txt" && curl -fsSL "$1/cgl-labz.service" -o /tmp/cgl-labz.service' sh "$RAW_BASE" "$ROOT"
   install -m 0644 /tmp/cgl-labz.service /etc/systemd/system/cgl-labz.service
   rm -f /tmp/cgl-labz.service
@@ -112,7 +112,7 @@ install_project() {
   progress_bar 4 "$TOTAL_STEPS"
   printf "\n"
   run_step 5 "[5/$TOTAL_STEPS] Updating package index" apt-get update
-  run_step 6 "[6/$TOTAL_STEPS] Installing GPIO libraries" apt-get install -y python3-gpiozero python3-lgpio
+  run_step 6 "[6/$TOTAL_STEPS] Installing GPIO and micro:bit libraries" apt-get install -y python3-gpiozero python3-lgpio python3-serial
   run_step 7 "[7/$TOTAL_STEPS] Enabling and restarting SkillExpo service" sh -c 'systemctl daemon-reload && systemctl enable cgl-labz.service >/dev/null && systemctl restart cgl-labz.service'
   rm -f "/tmp/cgl-skill-step-$.log"
   printf "\r"
