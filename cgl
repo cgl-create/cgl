@@ -1,6 +1,6 @@
 #!/bin/sh
 set -eu
-CGL_VERSION="1.0.28"
+CGL_VERSION="1.0.29"
 
 # Debian packages install CGL under /usr/share/cgl. The bootstrap installer
 # uses /usr/local/share/cgl. Prefer the system location when present.
@@ -26,7 +26,7 @@ Usage:
   cgl run <script>
   cgl update
   cgl update -os rpi
-  cgl update -pkg <package>
+  cgl update -pkg <package>\n  cgl install -update
   cgl update -os ubuntu
   cgl update -pkg rdp -os -rpi
   cgl install rdp -os rpi
@@ -38,7 +38,7 @@ Usage:
   cgl autoupdate
   cgl autoupdate on
   cgl autoupdate off
-  cgl hello
+  cgl hello\n  cgl stop
 
 Supported system package managers:
   apt, dnf, yum, pacman, zypper, apk
