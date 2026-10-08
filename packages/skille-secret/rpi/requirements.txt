@@ -1,2 +1,2 @@
 gpiozero>=2.0
-pyserial>=3.5
+bleak>=0.22
