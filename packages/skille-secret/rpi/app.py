@@ -1,5 +1,9 @@
 #!/usr/bin/env python3
-import glob, json, time\ntry:\n    import serial\nexcept ImportError:\n    serial = None
+import glob, json, time
+try:
+    import serial
+except ImportError:
+    serial = None
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from gpiozero import LED, Buzzer, DigitalInputDevice, PWMOutputDevice
 
@@ -11,14 +15,47 @@ ALERT_WHEN_LOW = True
 green = LED(GREEN); yellow = LED(YELLOW); red = LED(RED)
 buzzer = Buzzer(BUZZER); fan = PWMOutputDevice(FAN, frequency=1000)
 sensor = DigitalInputDevice(MQ135_DO, pull_up=False)
-started = time.monotonic(); last_alert_beep = 0.0; alert_phase = False\n\n# Optional micro:bit v2 display connected over USB serial.\nMICROBIT_PORTS = ("/dev/ttyACM0", "/dev/ttyACM1")\n_microbit = None\n_last_microbit = None\n\ndef microbit_write(message):\n    global _microbit, _last_microbit\n    if serial is None or message == _last_microbit:\n        return\n    if _microbit is None or not getattr(_microbit, "is_open", False):\n        for port in MICROBIT_PORTS:\n            if not glob.glob(port):\n                continue\n            try:\n                _microbit = serial.Serial(port, 115200, timeout=0.2, write_timeout=0.2)\n                break\n            except Exception:\n                _microbit = None\n    if _microbit is not None and getattr(_microbit, "is_open", False):\n        try:\n            _microbit.write((message + "\\n").encode())\n            _microbit.flush()\n            _last_microbit = message\n        except Exception:\n            try:\n                _microbit.close()\n            except Exception:\n                pass\n            _microbit = None
+started = time.monotonic(); last_alert_beep = 0.0; alert_phase = False
+
+# Optional micro:bit v2 display connected over USB serial.
+MICROBIT_PORTS = ("/dev/ttyACM0", "/dev/ttyACM1")
+_microbit = None
+_last_microbit = None
+
+def microbit_write(message):
+    global _microbit, _last_microbit
+    if serial is None or message == _last_microbit:
+        return
+    if _microbit is None or not getattr(_microbit, "is_open", False):
+        for port in MICROBIT_PORTS:
+            if not glob.glob(port):
+                continue
+            try:
+                _microbit = serial.Serial(port, 115200, timeout=0.2, write_timeout=0.2)
+                break
+            except Exception:
+                _microbit = None
+    if _microbit is not None and getattr(_microbit, "is_open", False):
+        try:
+            _microbit.write((message + "\
+").encode())
+            _microbit.flush()
+            _last_microbit = message
+        except Exception:
+            try:
+                _microbit.close()
+            except Exception:
+                pass
+            _microbit = None
 
 def state():
     global last_alert_beep, alert_phase
     elapsed = time.monotonic() - started
     if elapsed < WARMUP_SECONDS:
         green.off(); red.off(); yellow.on(); fan.off(); buzzer.off()
-        remaining = max(0, int(WARMUP_SECONDS - elapsed))\n        microbit_write("WARMUP:" + str(remaining))\n        return "WARMUP", remaining
+        remaining = max(0, int(WARMUP_SECONDS - elapsed))
+        microbit_write("WARMUP:" + str(remaining))
+        return "WARMUP", remaining
     alert = (not sensor.value) if ALERT_WHEN_LOW else bool(sensor.value)
     yellow.off()
     if alert:
@@ -27,7 +64,8 @@ def state():
         if now - last_alert_beep >= (0.25 if alert_phase else 0.75):
             alert_phase = not alert_phase; last_alert_beep = now
         buzzer.on() if alert_phase else buzzer.off()
-        microbit_write("ALERT")\n        return "ALERT", 0
+        microbit_write("ALERT")
+        return "ALERT", 0
     red.off(); green.on(); fan.off(); buzzer.off()
     return "NORMAL", 0
 
