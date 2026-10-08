@@ -1,0 +1,29 @@
+-----BEGIN PGP SIGNED MESSAGE-----
+Hash: SHA512
+
+Origin: CGL+
+Label: CGL+
+Suite: stable
+Codename: stable
+Architectures: amd64 arm64 armhf i386 all
+Components: main
+Description: CGL+ Debian package repository
+Date: Thu, 08 Oct 2026 08:07:36 +0000
+SHA256:
+ 1d7bd0303beb14341119716ddac614cdc75c8bf78dbe3fe6241861f50aed4cca 516 main/binary-all/Packages
+ 19b572c7e7afaa0f52c000574ea98d28c15e540ae9b29f0c0e2819dbd74efefc 376 main/binary-all/Packages.gz
+ 1d7bd0303beb14341119716ddac614cdc75c8bf78dbe3fe6241861f50aed4cca 516 main/binary-amd64/Packages
+ 19b572c7e7afaa0f52c000574ea98d28c15e540ae9b29f0c0e2819dbd74efefc 376 main/binary-amd64/Packages.gz
+ 1d7bd0303beb14341119716ddac614cdc75c8bf78dbe3fe6241861f50aed4cca 516 main/binary-arm64/Packages
+ 19b572c7e7afaa0f52c000574ea98d28c15e540ae9b29f0c0e2819dbd74efefc 376 main/binary-arm64/Packages.gz
+ 1d7bd0303beb14341119716ddac614cdc75c8bf78dbe3fe6241861f50aed4cca 516 main/binary-armhf/Packages
+ 19b572c7e7afaa0f52c000574ea98d28c15e540ae9b29f0c0e2819dbd74efefc 376 main/binary-armhf/Packages.gz
+ 1d7bd0303beb14341119716ddac614cdc75c8bf78dbe3fe6241861f50aed4cca 516 main/binary-i386/Packages
+ 19b572c7e7afaa0f52c000574ea98d28c15e540ae9b29f0c0e2819dbd74efefc 376 main/binary-i386/Packages.gz
+-----BEGIN PGP SIGNATURE-----
+
+iHUEARYKAB0WIQRgtNOGJD8Q+6orlcDS7AwS/Y05zAUCasdPSAAKCRDS7AwS/Y05
+zEmAAP44zVgRBghPMEuMcxMITgBAcSTpegX0vrLBGhJ1UBikXgEA5yiNY/ZKrwls
+PV9xt6BtydEe0M6LtqolkTiRki1B5g8=
+=ZmCQ
+-----END PGP SIGNATURE-----

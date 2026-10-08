@@ -1,0 +1,15 @@
+Package: cgl
+Version: 1.0.28
+Architecture: all
+Maintainer: CGL+ <cgl@crazygamelabs.co.uk>
+Filename: pool/main/c/cgl/cgl_1.0.28_all.deb
+Size: 12670
+MD5sum: a9ad77e5722b6566ba31c569fb116a9e
+SHA1: 24064a97d09f51144922c2aa7e3bc060b6e7df76
+SHA256: e4ac119ab092084e03b124cf10dd2bab4cd338f273e0010fd7523ba30c278590
+Section: utils
+Priority: optional
+Homepage: https://crazygamelabs.co.uk/
+Description: CGL+ universal Linux package and script manager
+ A Homebrew-inspired package and script manager for Linux distributions.
+
