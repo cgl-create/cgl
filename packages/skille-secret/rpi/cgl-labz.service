@@ -6,7 +6,7 @@ Wants=network-online.target
 [Service]
 Type=simple
 WorkingDirectory=/opt/cgl-labz
-ExecStart=/usr/bin/python3 /opt/cgl-labz/app.py
+Environment=PYTHONUNBUFFERED=1\nExecStart=/usr/bin/python3 /opt/cgl-labz/app.py
 Restart=always
 RestartSec=3
 
