@@ -27,18 +27,14 @@ Usage:
   cgl update
   cgl update -os rpi
   cgl update -pkg <package>
-  cgl update -pkg skille-secret -os rpi -key aqs-skille-key1
   cgl update -os ubuntu
   cgl update -pkg rdp -os -rpi
-  cgl update -pkg skille-secret -os rpi -key aqs-skille-key1
   cgl install rdp -os rpi
-  cgl install skille-secret -os rpi
   cgl install umbrel
   cgl install -revoke rdp -os rpi
   cgl install -rst rdp -os rpi
   cgl install -fix rdp -os rpi
   cgl install rdp -os ubuntu
-  cgl run skille-secret -os rpi -key aqs-skille-key1
   cgl autoupdate
   cgl autoupdate on
   cgl autoupdate off
