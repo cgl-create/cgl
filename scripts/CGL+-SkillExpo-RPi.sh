@@ -43,13 +43,6 @@ progress_bar() {
   done
   printf "[%s] %s/%s" "$bar" "$current" "$total"
 }
-show_progress() {
-  current="$1"
-  total="$2"
-  printf "\r"
-  progress_bar "$current" "$total"
-  printf "\n"
-}
 run_with_spinner() {
   step="$1"
   label="$2"
@@ -59,14 +52,11 @@ run_with_spinner() {
   "$@" >"$log" 2>&1 &
   pid=$!
 
-  # Use the animated GNOME-style layout only on a real terminal. In CI,
-  # SSH wrappers, logs, and other non-TTY environments, ANSI cursor movement
-  # becomes literal/repeated output, so emit one clean line per step instead.
+  # Use animated terminal layout only on a real TTY; keep SSH logs readable.
   if [ -t 1 ]; then
     printf '%s %s\n' "$label" "$(spinner "$i")"
     printf '\n\n\n\n\n'
     progress_bar "$step" "$TOTAL_STEPS"
-
     while kill -0 "$pid" 2>/dev/null; do
       printf '\033[6A\033[2K\r%s %s\n' "$label" "$(spinner "$i")"
       printf '\033[5B\033[2K\r'
@@ -75,7 +65,6 @@ run_with_spinner() {
       i=$(( (i + 1) % 10 ))
       sleep 0.08
     done
-
     wait "$pid"
     printf '\033[6A\033[2K\r%s ✓\n' "$label"
     printf '\033[5B\033[2K\r'
@@ -87,7 +76,6 @@ run_with_spinner() {
     progress_bar "$step" "$TOTAL_STEPS"
     printf '\n'
   fi
-
   rm -f "$log"
 }
 run_step() {
@@ -104,7 +92,7 @@ install_project() {
   printf '[1/%s] Preparing SkillExpo package ✓\n' "$TOTAL_STEPS"
   progress_bar 1 "$TOTAL_STEPS"
   printf "\n"
-  run_step 2 "[2/$TOTAL_STEPS] Downloading project files" curl -fsSL "$RAW_BASE/app.py" -o "$ROOT/app.py" && curl -fsSL "$RAW_BASE/microbit-makecode.ts" -o "$ROOT/microbit-makecode.ts"
+  run_step 2 "[2/$TOTAL_STEPS] Downloading MQ-2 project files" curl -fsSL "$RAW_BASE/app.py" -o "$ROOT/app.py"
   run_step 3 "[3/$TOTAL_STEPS] Downloading package configuration" sh -c 'curl -fsSL "$1/requirements.txt" -o "$2/requirements.txt" && curl -fsSL "$1/cgl-labz.service" -o /tmp/cgl-labz.service' sh "$RAW_BASE" "$ROOT"
   install -m 0644 /tmp/cgl-labz.service /etc/systemd/system/cgl-labz.service
   rm -f /tmp/cgl-labz.service
@@ -112,9 +100,8 @@ install_project() {
   progress_bar 4 "$TOTAL_STEPS"
   printf "\n"
   run_step 5 "[5/$TOTAL_STEPS] Updating package index" apt-get update
-  run_step 6 "[6/$TOTAL_STEPS] Installing GPIO and micro:bit libraries" apt-get install -y python3-gpiozero python3-lgpio python3-bleak
+  run_step 6 "[6/$TOTAL_STEPS] Installing GPIO libraries" apt-get install -y python3-gpiozero python3-lgpio
   run_step 7 "[7/$TOTAL_STEPS] Enabling and restarting SkillExpo service" sh -c 'systemctl daemon-reload && systemctl enable cgl-labz.service >/dev/null && systemctl restart cgl-labz.service'
-  rm -f "/tmp/cgl-skill-step-$.log"
   printf "\r"
   progress_bar "$TOTAL_STEPS" "$TOTAL_STEPS"
   printf '\n\nCGL+ LabZ | SkillExpo package successfully updated.\n'
