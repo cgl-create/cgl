@@ -26,7 +26,8 @@ Usage:
   cgl run <script>
   cgl update
   cgl update -os rpi
-  cgl update -pkg <package>\n  cgl install -update
+  cgl update -pkg <package>
+  cgl install -update
   cgl update -os ubuntu
   cgl update -pkg rdp -os -rpi
   cgl install rdp -os rpi
@@ -41,13 +42,15 @@ Usage:
   cgl autoupdate
   cgl autoupdate on
   cgl autoupdate off
-  cgl hello\n  cgl stop
+  cgl hello
+  cgl stop
 
 Supported system package managers:
   apt, dnf, yum, pacman, zypper, apk
 EOF
 }
-die() { printf 'cgl: %s\n' "$*" >&2; exit 1; }
+die() { printf 'cgl: %s
+' "$*" >&2; exit 1; }
 
 as_root() {
   if [ "$(id -u)" -eq 0 ]; then
@@ -60,12 +63,18 @@ as_root() {
 }
 
 detect_pm() {
-  if command -v apt-get >/dev/null 2>&1; then printf 'apt\n'
-  elif command -v dnf >/dev/null 2>&1; then printf 'dnf\n'
-  elif command -v yum >/dev/null 2>&1; then printf 'yum\n'
-  elif command -v pacman >/dev/null 2>&1; then printf 'pacman\n'
-  elif command -v zypper >/dev/null 2>&1; then printf 'zypper\n'
-  elif command -v apk >/dev/null 2>&1; then printf 'apk\n'
+  if command -v apt-get >/dev/null 2>&1; then printf 'apt
+'
+  elif command -v dnf >/dev/null 2>&1; then printf 'dnf
+'
+  elif command -v yum >/dev/null 2>&1; then printf 'yum
+'
+  elif command -v pacman >/dev/null 2>&1; then printf 'pacman
+'
+  elif command -v zypper >/dev/null 2>&1; then printf 'zypper
+'
+  elif command -v apk >/dev/null 2>&1; then printf 'apk
+'
   else die "no supported Linux package manager found"; fi
 }
 
@@ -85,8 +94,10 @@ repair_cgl_apt_source() {
   [ -f "$CGL_APT_SOURCES" ] || return 0
   grep -q 'packages.crazygamelabs.co.uk' "$CGL_APT_SOURCES" 2>/dev/null || return 0
   apt_repo_available "$CGL_APT_PRIMARY" && return 0
-  printf '%s\n' "CGL+ | Primary package repository is unavailable; switching to GitHub Pages fallback."
-  printf '%s\n' "deb [signed-by=/usr/share/keyrings/cgl-archive-keyring.gpg] $CGL_APT_FALLBACK stable main" > "$CGL_APT_SOURCES"
+  printf '%s
+' "CGL+ | Primary package repository is unavailable; switching to GitHub Pages fallback."
+  printf '%s
+' "deb [signed-by=/usr/share/keyrings/cgl-archive-keyring.gpg] $CGL_APT_FALLBACK stable main" > "$CGL_APT_SOURCES"
 }
 
 pm_update() {
@@ -140,21 +151,25 @@ self_update() {
   pm="$1"
   if [ "$pm" = "apt" ] && command -v dpkg-query >/dev/null 2>&1 &&
      dpkg-query -W -f='${Status}' cgl 2>/dev/null | grep -q 'install ok installed'; then
-    printf '%s\n' "CGL+ | Checking for CGL updates..."
+    printf '%s
+' "CGL+ | Checking for CGL updates..."
     as_root apt-get install --only-upgrade -y cgl
   fi
 }
 
 autoupdate_status() {
   if [ -f /etc/cron.daily/cgl-autoupdate ]; then
-    printf '%s\n' "CGL+ automatic updates: enabled (daily)"
+    printf '%s
+' "CGL+ automatic updates: enabled (daily)"
   else
-    printf '%s\n' "CGL+ automatic updates: disabled"
+    printf '%s
+' "CGL+ automatic updates: disabled"
   fi
 }
 
 hello() {
-  printf '%s\n' "Hello World!"
+  printf '%s
+' "Hello World!"
 }
 
 autoupdate_on() {
@@ -177,7 +192,8 @@ chmod 0755 /etc/cron.daily/cgl-autoupdate'
   else
     die "sudo is required to enable automatic updates"
   fi
-  printf '%s\n' "CGL+ automatic updates enabled (daily)."
+  printf '%s
+' "CGL+ automatic updates enabled (daily)."
 }
 
 autoupdate_off() {
@@ -188,7 +204,8 @@ autoupdate_off() {
   else
     die "sudo is required to disable automatic updates"
   fi
-  printf '%s\n' "CGL+ automatic updates disabled."
+  printf '%s
+' "CGL+ automatic updates disabled."
 }
 
 pm_search() {
@@ -203,7 +220,8 @@ pm_search() {
 }
 
 case "${1:-help}" in
-version|--version|-v) printf 'cgl %s\n' "$CGL_VERSION" ;;
+version|--version|-v) printf 'cgl %s
+' "$CGL_VERSION" ;;
 help|--help|-h) usage ;;
 run)
   if [ "$#" -ge 2 ] && [ "$2" = "skille-secret" ]; then
@@ -352,7 +370,11 @@ list)
   ;;
 doctor)
   pm="$(detect_pm 2>/dev/null || printf 'none')"
-  printf 'CGL+ doctor\nVersion: %s\nRoot: %s\nPackage manager: %s\n' "$CGL_VERSION" "$CGL_ROOT" "$pm"
+  printf 'CGL+ doctor
+Version: %s
+Root: %s
+Package manager: %s
+' "$CGL_VERSION" "$CGL_ROOT" "$pm"
   ;;
 *) die "unknown command '$1'; run 'cgl help'" ;;
 esac
