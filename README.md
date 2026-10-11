@@ -74,6 +74,9 @@ CGL then delegates package operations to the host's native package manager.
     cgl install rdp -os rpi
     cgl install rdp -os ubuntu
     cgl install skille-secret -os rpi
+    cgl install qmle
+    cgl install -update qmle
+    cgl install -revoke qmle
     cgl update -pkg <package>
     cgl update -pkg skille-secret -os rpi -key aqs-skille-key1
     cgl run skille-secret -os rpi -key aqs-skille-key1
@@ -114,7 +117,7 @@ Note: WayVNC is intended for wlroots-based Wayland compositors.
 
 ## QMLE by CGL+
 
-A standalone Python desktop encryption prototype is available under [`apps/qmle/`](apps/qmle/). It uses Pygame Community Edition and `cryptography`; setup and run instructions are in [the QMLE README](apps/qmle/README.md). It is separate from the Linux CGL CLI and does not add a new `cgl` command.
+QMLE by CGL+ is available as a managed desktop package. Use `cgl install qmle` to install, `cgl install -update qmle` to update, and `cgl install -revoke qmle` to remove the app. Revoking QMLE preserves `~/.config/qmle/` encryption keys so saved ciphertext remains decryptable. Source and details: [`apps/qmle/`](apps/qmle/README.md).
 
 ## Design
 
