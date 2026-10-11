@@ -1,7 +1,7 @@
 #!/bin/sh
 set -eu
 ROOT="$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)"
-test "$("$ROOT/cgl" version)" = 'cgl 1.0.29'
+test "$("$ROOT/cgl" version)" = 'cgl 1.0.30'
 "$ROOT/cgl" help >/dev/null
 sh -n "$ROOT/cgl"
 sh -n "$ROOT/scripts/CGL+-RDP-RPi.sh"
@@ -9,6 +9,7 @@ sh -n "$ROOT/scripts/CGL+-RDP-Web.sh"
 sh -n "$ROOT/scripts/CGL+-Umbrel.sh"
 sh -n "$ROOT/install.sh"
 sh -n "$ROOT/scripts/CGL+-SkillExpo-RPi.sh"
+sh -n "$ROOT/scripts/CGL+-QMLE.sh"
 grep -F 'cgl install skille-secret -os rpi' "$ROOT/cgl" >/dev/null
 grep -F 'cgl install umbrel' "$ROOT/cgl" >/dev/null\ngrep -F 'cgl install -update' "$ROOT/cgl" >/dev/null\ngrep -F 'stop)' "$ROOT/cgl" >/dev/null\ngrep -F 'cgl install -update' "$ROOT/cgl" >/dev/null\ngrep -F 'stop)' "$ROOT/cgl" >/dev/null
 grep -F 'CGL+-Umbrel.sh' "$ROOT/cgl" >/dev/null
