@@ -1,8 +1,8 @@
 # CGL+
 
-CGL+ is a universal Linux package and script manager. It provides a Homebrew-style command layer while continuing to use the native package manager underneath.
+CGL+ is a cross-platform package and script manager. It provides a Homebrew-style command layer while continuing to use the native package manager underneath.
 
-## Linux support
+## Supported platforms\n\n- Linux: apt, dnf, yum, pacman, zypper, and apk.\n- macOS: Homebrew (`brew`). Install Homebrew first from https://brew.sh; CGL does not install it automatically.\n\n## Linux support
 
 CGL detects and works with these native package managers:
 
@@ -43,7 +43,7 @@ The repository key fingerprint currently expected by the bootstrap script is:
 
 Do not use `[trusted=yes]` for normal installations. That option disables the normal APT signature trust check and is only useful for temporary repository diagnostics.
 
-### One-command APT bootstrap
+### One-command installer for Linux and macOS\n\nThe installer detects the operating system. On Debian-family Linux it configures the signed APT repository; on macOS and non-APT Linux it installs the CLI and bundled scripts under `/usr/local`.\n\n    curl -fsSL https://packages.crazygamelabs.co.uk/install.sh | sh\n\nGitHub fallback:\n\n    curl -fsSL https://raw.githubusercontent.com/cgl-create/cgl/main/install.sh | sh\n\n### One-command APT bootstrap
 
 If you have reviewed the bootstrap script and want to run it directly from GitHub:
 
