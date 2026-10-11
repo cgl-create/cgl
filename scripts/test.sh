@@ -41,4 +41,5 @@ grep -F 'metacity --replace' "$ROOT/scripts/CGL+-RDP-Web.sh" >/dev/null
 grep -F 'gnome-panel' "$ROOT/scripts/CGL+-RDP-Web.sh" >/dev/null
 grep -F 'x11vnc' "$ROOT/scripts/CGL+-RDP-Web.sh" >/dev/null
 
+grep -F 'brew update' "$ROOT/cgl" >/dev/null
 echo 'CGL+ tests passed.'
