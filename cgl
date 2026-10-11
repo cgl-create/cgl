@@ -26,7 +26,8 @@ Usage:
   cgl run <script>
   cgl update
   cgl update -os rpi
-  cgl update -pkg <package>\n  cgl install -update
+  cgl update -pkg <package>
+  cgl install -update
   cgl update -os ubuntu
   cgl update -pkg rdp -os -rpi
   cgl install rdp -os rpi
@@ -38,10 +39,11 @@ Usage:
   cgl autoupdate
   cgl autoupdate on
   cgl autoupdate off
-  cgl hello\n  cgl stop
+  cgl hello
+  cgl stop
 
 Supported system package managers:
-  apt, dnf, yum, pacman, zypper, apk
+  apt, dnf, yum, pacman, zypper, apk, brew
 EOF
 }
 die() { printf 'cgl: %s\n' "$*" >&2; exit 1; }
@@ -63,7 +65,8 @@ detect_pm() {
   elif command -v pacman >/dev/null 2>&1; then printf 'pacman\n'
   elif command -v zypper >/dev/null 2>&1; then printf 'zypper\n'
   elif command -v apk >/dev/null 2>&1; then printf 'apk\n'
-  elif command -v brew >/dev/null 2>&1; then printf "brew\\n"\n  else die "no supported package manager found"; fi
+  elif command -v brew >/dev/null 2>&1; then printf 'brew\n'
+  else die "no supported package manager found"; fi
 }
 
 apt_repo_available() {
@@ -96,7 +99,8 @@ pm_update() {
     yum) as_root yum makecache ;;
     pacman) as_root pacman -Syu --noconfirm ;;
     zypper) as_root zypper --non-interactive refresh ;;
-    apk) as_root apk update ;;\n    brew) brew update ;;
+    apk) as_root apk update ;;
+    brew) brew update ;;
   esac
 }
 
@@ -107,7 +111,8 @@ pm_upgrade() {
     yum) as_root yum update -y ;;
     pacman) : ;; # pacman -Syu is already performed by pm_update.
     zypper) as_root zypper --non-interactive update ;;
-    apk) as_root apk upgrade ;;\n    brew) brew upgrade ;;
+    apk) as_root apk upgrade ;;
+    brew) brew upgrade ;;
   esac
 }
 
@@ -118,7 +123,8 @@ pm_install() {
     yum) as_root yum install -y "$2" ;;
     pacman) as_root pacman -S --noconfirm "$2" ;;
     zypper) as_root zypper --non-interactive install "$2" ;;
-    apk) as_root apk add "$2" ;;\n    brew) brew install "$2" ;;
+    apk) as_root apk add "$2" ;;
+    brew) brew install "$2" ;;
   esac
 }
 
@@ -129,7 +135,8 @@ pm_remove() {
     yum) as_root yum remove -y "$2" ;;
     pacman) as_root pacman -R --noconfirm "$2" ;;
     zypper) as_root zypper --non-interactive remove "$2" ;;
-    apk) as_root apk del "$2" ;;\n    brew) brew uninstall "$2" ;;
+    apk) as_root apk del "$2" ;;
+    brew) brew uninstall "$2" ;;
   esac
 }
 
@@ -195,7 +202,8 @@ pm_search() {
     yum) yum search "$2" ;;
     pacman) pacman -Ss "$2" ;;
     zypper) zypper search "$2" ;;
-    apk) apk search "$2" ;;\n    brew) brew search "$2" ;;
+    apk) apk search "$2" ;;
+    brew) brew search "$2" ;;
   esac
 }
 
