@@ -32,6 +32,9 @@ Usage:
   cgl update -pkg rdp -os -rpi
   cgl install rdp -os rpi
   cgl install umbrel
+  cgl install qmle
+  cgl install -update qmle
+  cgl install -revoke qmle
   cgl install skille-secret -os rpi
   cgl update -pkg skille-secret -os rpi -key aqs-skille-key1
   cgl run skille-secret -os rpi -key aqs-skille-key1
@@ -280,6 +283,17 @@ autoupdate)
   esac
   ;;
 install)
+  if [ "$#" -eq 2 ] && [ "$2" = "qmle" ]; then
+    path="$CGL_ROOT/scripts/CGL+-QMLE.sh"
+    [ -f "$path" ] || die 'QMLE package script is not installed'
+    exec "$path" install
+  fi
+  if [ "$#" -eq 3 ] && { [ "$2" = "-update" ] || [ "$2" = "-revoke" ]; } && [ "$3" = "qmle" ]; then
+    path="$CGL_ROOT/scripts/CGL+-QMLE.sh"
+    [ -f "$path" ] || die 'QMLE package script is not installed'
+    action="${2#-}"
+    exec "$path" "$action"
+  fi
   if [ "$#" -eq 2 ] && [ "$2" = "-update" ]; then
     exec "$0" update
   fi
@@ -319,7 +333,7 @@ install)
     [ -f "$path" ] || die 'Raspberry Pi RDP setup script is not installed'
     exec "$path" "$2"
   fi
-  [ "$#" -eq 2 ] || die 'usage: cgl install <package> | cgl install rdp -os <rpi|ubuntu> | cgl install <-revoke|-rst|-fix> rdp -os rpi'
+  [ "$#" -eq 2 ] || die 'usage: cgl install <package> | cgl install qmle | cgl install -update qmle | cgl install -revoke qmle | cgl install rdp -os <rpi|ubuntu> | cgl install <-revoke|-rst|-fix> rdp -os rpi'
   pm="$(detect_pm)"
   pm_update "$pm"
   pm_install "$pm" "$2"
