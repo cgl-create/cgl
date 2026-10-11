@@ -38,8 +38,15 @@ def ensure_keys() -> None:
     except OSError:
         pass
 
-    if PRIVATE_KEY_PATH.exists() and PUBLIC_KEY_PATH.exists():
+    private_exists = PRIVATE_KEY_PATH.exists()
+    public_exists = PUBLIC_KEY_PATH.exists()
+    if private_exists and public_exists:
         return
+    if private_exists != public_exists:
+        raise RuntimeError(
+            "QMLE keypair is incomplete. Restore both key files from backup; "
+            "refusing to generate a replacement that could make old ciphertext undecryptable."
+        )
 
     key = rsa.generate_private_key(public_exponent=65537, key_size=3072)
     private_bytes = key.private_bytes(
