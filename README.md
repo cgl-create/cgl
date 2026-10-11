@@ -138,3 +138,7 @@ Note: WayVNC is intended for wlroots-based Wayland compositors.
 CGL does not replace APT, DNF, Pacman, Zypper, APK, or other native package managers. It detects the host distribution's package manager and delegates package operations to it. CGL+ packages and scripts can be added independently of the underlying operating system.
 
 The Debian-family CGL+ repository is signed and published at `https://packages.crazygamelabs.co.uk`.
+
+## QMLE by CGL+
+
+Install QMLE with `cgl install qmle`, update it with `cgl install -update qmle`, or remove its launcher and application files with `cgl install -revoke qmle`. QMLE keeps local key files under `~/.config/qmle/` so removing the app does not silently destroy the ability to decrypt previously encrypted content.
