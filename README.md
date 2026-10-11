@@ -112,6 +112,10 @@ Port 1350 is intended for a trusted LAN in this configuration. The browser gatew
 
 Note: WayVNC is intended for wlroots-based Wayland compositors.
 
+## QMLE by CGL+
+
+A standalone Python desktop encryption prototype is available under [`apps/qmle/`](apps/qmle/). It uses Pygame Community Edition and `cryptography`; setup and run instructions are in [the QMLE README](apps/qmle/README.md). It is separate from the Linux CGL CLI and does not add a new `cgl` command.
+
 ## Design
 
 CGL does not replace APT, DNF, Pacman, Zypper, APK, or other native package managers. It detects the host distribution's package manager and delegates package operations to it. CGL+ packages and scripts can be added independently of the underlying operating system.
