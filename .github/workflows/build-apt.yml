@@ -150,3 +150,17 @@ jobs:
           publish_dir: ./public
           force_orphan: true
           commit_message: Publish signed CGL APT repository with root and public source compatibility
+
+  test-macos:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check macOS shell support
+        run: |
+          set -eu
+          chmod +x cgl install.sh scripts/*.sh
+          sh -n cgl
+          sh -n install.sh
+          ./cgl version
+          command -v brew
+          ./cgl doctor | grep -F 'Package manager: brew'
