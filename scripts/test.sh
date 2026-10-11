@@ -11,7 +11,11 @@ sh -n "$ROOT/install.sh"
 sh -n "$ROOT/scripts/CGL+-SkillExpo-RPi.sh"
 sh -n "$ROOT/scripts/CGL+-QMLE.sh"
 grep -F 'cgl install skille-secret -os rpi' "$ROOT/cgl" >/dev/null
-grep -F 'cgl install umbrel' "$ROOT/cgl" >/dev/null\ngrep -F 'cgl install -update' "$ROOT/cgl" >/dev/null\ngrep -F 'stop)' "$ROOT/cgl" >/dev/null\ngrep -F 'cgl install -update' "$ROOT/cgl" >/dev/null\ngrep -F 'stop)' "$ROOT/cgl" >/dev/null
+grep -F 'cgl install umbrel' "$ROOT/cgl" >/dev/null
+grep -F 'cgl install -update' "$ROOT/cgl" >/dev/null
+grep -F 'stop)' "$ROOT/cgl" >/dev/null
+grep -F 'cgl install -update' "$ROOT/cgl" >/dev/null
+grep -F 'stop)' "$ROOT/cgl" >/dev/null
 grep -F 'CGL+-Umbrel.sh' "$ROOT/cgl" >/dev/null
 grep -F 'cgl update -pkg <package>' "$ROOT/cgl" >/dev/null
 grep -F 'cgl update -pkg skille-secret -os rpi -key aqs-skille-key1' "$ROOT/cgl" >/dev/null
