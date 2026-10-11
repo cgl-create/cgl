@@ -2,7 +2,12 @@
 
 CGL+ is a cross-platform package and script manager. It provides a Homebrew-style command layer while continuing to use the native package manager underneath.
 
-## Supported platforms\n\n- Linux: apt, dnf, yum, pacman, zypper, and apk.\n- macOS: Homebrew (`brew`). Install Homebrew first from https://brew.sh; CGL does not install it automatically.\n\n## Linux support
+## Supported platforms
+
+- Linux: apt, dnf, yum, pacman, zypper, and apk.
+- macOS: Homebrew (`brew`). Install Homebrew first from https://brew.sh; CGL does not install it automatically.
+
+## Linux support
 
 CGL detects and works with these native package managers:
 
@@ -43,7 +48,17 @@ The repository key fingerprint currently expected by the bootstrap script is:
 
 Do not use `[trusted=yes]` for normal installations. That option disables the normal APT signature trust check and is only useful for temporary repository diagnostics.
 
-### One-command installer for Linux and macOS\n\nThe installer detects the operating system. On Debian-family Linux it configures the signed APT repository; on macOS and non-APT Linux it installs the CLI and bundled scripts under `/usr/local`.\n\n    curl -fsSL https://packages.crazygamelabs.co.uk/install.sh | sh\n\nGitHub fallback:\n\n    curl -fsSL https://raw.githubusercontent.com/cgl-create/cgl/main/install.sh | sh\n\n### One-command APT bootstrap
+### One-command installer for Linux and macOS
+
+The installer detects the operating system. On Debian-family Linux it configures the signed APT repository; on macOS and non-APT Linux it installs the CLI and bundled scripts under `/usr/local`.
+
+    curl -fsSL https://packages.crazygamelabs.co.uk/install.sh | sh
+
+GitHub fallback:
+
+    curl -fsSL https://raw.githubusercontent.com/cgl-create/cgl/main/install.sh | sh
+
+### One-command APT bootstrap
 
 If you have reviewed the bootstrap script and want to run it directly from GitHub:
 
@@ -86,7 +101,13 @@ CGL then delegates package operations to the host's native package manager.
     cgl list
     cgl doctor
 
-## CGL+ SkillExpo\n\nThe `skille-secret` Raspberry Pi package installs the CGL+ LabZ SkillExpo air-quality dashboard. Installation prompts for the SkillExpo Project Key when one is not supplied. The current project key is `aqs-skille-key1`.\n\nThe package uses the existing Cloudflare Tunnel hostname `skille-secret.crazygamelabs.co.uk` and serves the local dashboard on port `5000`.\n\n## CGL+ Browser RDP
+## CGL+ SkillExpo
+
+The `skille-secret` Raspberry Pi package installs the CGL+ LabZ SkillExpo air-quality dashboard. Installation prompts for the SkillExpo Project Key when one is not supplied. The current project key is `aqs-skille-key1`.
+
+The package uses the existing Cloudflare Tunnel hostname `skille-secret.crazygamelabs.co.uk` and serves the local dashboard on port `5000`.
+
+## CGL+ Browser RDP
 
 Install the remote desktop gateway with:
 
