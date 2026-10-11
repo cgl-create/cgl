@@ -3,6 +3,8 @@ name: Build CGL APT Repository
 on:
   push:
     branches: [main]
+  pull_request:
+    branches: [main]
   workflow_dispatch:
 
 permissions:
@@ -27,6 +29,7 @@ jobs:
           ./scripts/test.sh
 
       - name: Build signed APT repository
+        if: github.event_name != 'pull_request'
         env:
           APT_GPG_PRIVATE_KEY: ${{ secrets.APT_GPG_PRIVATE_KEY }}
           APT_GPG_PASSPHRASE: ${{ secrets.APT_GPG_PASSPHRASE }}
@@ -127,6 +130,7 @@ jobs:
           cp public/cgl-archive-keyring.gpg public/public/cgl-archive-keyring.gpg
 
       - name: Verify repository files before Pages publish
+        if: github.event_name != 'pull_request'
         run: |
           set -eu
           VERSION="$(sed -n 's/^Version: //p' package/DEBIAN/control | head -n1)"
@@ -138,6 +142,7 @@ jobs:
           done
 
       - name: Publish to GitHub Pages
+        if: github.event_name != 'pull_request'
         uses: peaceiris/actions-gh-pages@v4
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
