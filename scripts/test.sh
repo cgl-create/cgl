@@ -9,6 +9,7 @@ sh -n "$ROOT/scripts/CGL+-RDP-Web.sh"
 sh -n "$ROOT/scripts/CGL+-Umbrel.sh"
 sh -n "$ROOT/install.sh"
 sh -n "$ROOT/scripts/CGL+-SkillExpo-RPi.sh"
+sh -n "$ROOT/scripts/CGL+-QMLE.sh"
 grep -F 'cgl install skille-secret -os rpi' "$ROOT/cgl" >/dev/null
 grep -F 'cgl install umbrel' "$ROOT/cgl" >/dev/null
 grep -F 'cgl install -update' "$ROOT/cgl" >/dev/null
@@ -46,4 +47,8 @@ grep -F 'gnome-panel' "$ROOT/scripts/CGL+-RDP-Web.sh" >/dev/null
 grep -F 'x11vnc' "$ROOT/scripts/CGL+-RDP-Web.sh" >/dev/null
 
 grep -F 'brew update' "$ROOT/cgl" >/dev/null
+grep -F 'cgl install qmle' "$ROOT/cgl" >/dev/null
+grep -F 'cgl install -update qmle' "$ROOT/cgl" >/dev/null
+grep -F 'cgl install -revoke qmle' "$ROOT/cgl" >/dev/null
+grep -F 'CGL+-QMLE.sh' "$ROOT/cgl" >/dev/null
 echo 'CGL+ tests passed.'
