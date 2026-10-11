@@ -42,4 +42,8 @@ grep -F 'metacity --replace' "$ROOT/scripts/CGL+-RDP-Web.sh" >/dev/null
 grep -F 'gnome-panel' "$ROOT/scripts/CGL+-RDP-Web.sh" >/dev/null
 grep -F 'x11vnc' "$ROOT/scripts/CGL+-RDP-Web.sh" >/dev/null
 
+grep -F 'cgl install qmle' "$ROOT/cgl" >/dev/null
+grep -F 'cgl install -update qmle' "$ROOT/cgl" >/dev/null
+grep -F 'cgl install -revoke qmle' "$ROOT/cgl" >/dev/null
+grep -F 'CGL+-QMLE.sh' "$ROOT/cgl" >/dev/null
 echo 'CGL+ tests passed.'
