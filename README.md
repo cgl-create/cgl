@@ -89,7 +89,13 @@ CGL then delegates package operations to the host's native package manager.
     cgl list
     cgl doctor
 
-## CGL+ SkillExpo\n\nThe `skille-secret` Raspberry Pi package installs the CGL+ LabZ SkillExpo air-quality dashboard. Installation prompts for the SkillExpo Project Key when one is not supplied. The current project key is `aqs-skille-key1`.\n\nThe package uses the existing Cloudflare Tunnel hostname `skille-secret.crazygamelabs.co.uk` and serves the local dashboard on port `5000`.\n\n## CGL+ Browser RDP
+## CGL+ SkillExpo
+
+The `skille-secret` Raspberry Pi package installs the CGL+ LabZ SkillExpo air-quality dashboard. Installation prompts for the SkillExpo Project Key when one is not supplied. The current project key is `aqs-skille-key1`.
+
+The package uses the existing Cloudflare Tunnel hostname `skille-secret.crazygamelabs.co.uk` and serves the local dashboard on port `5000`.
+
+## CGL+ Browser RDP
 
 Install the remote desktop gateway with:
 
