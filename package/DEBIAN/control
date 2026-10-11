@@ -1,9 +1,9 @@
 Package: cgl
-Version: 1.0.29
+Version: 1.0.30
 Section: utils
 Priority: optional
 Architecture: all
 Maintainer: CGL+ <cgl@crazygamelabs.co.uk>
-Description: CGL+ universal Linux package and script manager
- A Homebrew-inspired package and script manager for Linux distributions.
+Description: CGL+ cross-platform package and script manager
+ A Homebrew-inspired cross-platform package and script manager.
 Homepage: https://crazygamelabs.co.uk/
