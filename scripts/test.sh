@@ -1,5 +1,5 @@
 #!/bin/sh
-set -eux
+set -eu
 ROOT="$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)"
 test "$("$ROOT/cgl" version)" = 'cgl 1.0.30'
 "$ROOT/cgl" help >/dev/null
