@@ -277,6 +277,9 @@ autoupdate)
   esac
   ;;
 install)
+  if [ "$#" -eq 2 ] && [ "$2" = "-update" ]; then
+    exec "$0" update
+  fi
   # RDP install/lifecycle syntax:
   #   cgl install rdp -os rpi
   #   cgl install -revoke rdp -os rpi
@@ -317,6 +320,14 @@ install)
   pm="$(detect_pm)"
   pm_update "$pm"
   pm_install "$pm" "$2"
+  ;;
+stop)
+  if command -v systemctl >/dev/null 2>&1; then
+    as_root systemctl stop cgl-rdp-web.service 2>/dev/null || true
+  fi
+  if command -v docker >/dev/null 2>&1; then
+    docker stop umbrel >/dev/null 2>&1 || true
+  fi
   ;;
 hello)
   hello
