@@ -43,7 +43,7 @@ Usage:
   cgl stop
 
 Supported system package managers:
-  apt, dnf, yum, pacman, zypper, apk, brew
+  apt, dnf, yum, pacman, zypper, apk
 EOF
 }
 die() { printf 'cgl: %s\n' "$*" >&2; exit 1; }
