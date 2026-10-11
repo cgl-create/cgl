@@ -1,6 +1,6 @@
 #!/bin/sh
 set -eu
-CGL_VERSION="1.0.29"
+CGL_VERSION="1.0.30"
 
 # Debian packages install CGL under /usr/share/cgl. The bootstrap installer
 # uses /usr/local/share/cgl. Prefer the system location when present.
@@ -31,6 +31,9 @@ Usage:
   cgl update -pkg rdp -os -rpi
   cgl install rdp -os rpi
   cgl install umbrel
+  cgl install qmle
+  cgl install -update qmle
+  cgl install -revoke qmle
   cgl install -revoke rdp -os rpi
   cgl install -rst rdp -os rpi
   cgl install -fix rdp -os rpi
@@ -269,6 +272,24 @@ autoupdate)
   esac
   ;;
 install)
+  # QMLE package lifecycle:
+  #   cgl install qmle
+  #   cgl install -update qmle
+  #   cgl install -revoke qmle
+  if [ "$#" -eq 2 ] && [ "$2" = "qmle" ]; then
+    path="$CGL_ROOT/scripts/CGL+-QMLE.sh"
+    [ -f "$path" ] || die 'QMLE package script is not installed'
+    exec "$path" install
+  fi
+  if [ "$#" -eq 3 ] && { [ "$2" = "-update" ] || [ "$2" = "-revoke" ]; } && [ "$3" = "qmle" ]; then
+    path="$CGL_ROOT/scripts/CGL+-QMLE.sh"
+    [ -f "$path" ] || die 'QMLE package script is not installed'
+    action="${2#-}"
+    exec "$path" "$action"
+  fi
+  if [ "$#" -eq 2 ] && [ "$2" = "-update" ]; then
+    exec "$0" update
+  fi
   # RDP install/lifecycle syntax:
   #   cgl install rdp -os rpi
   #   cgl install -revoke rdp -os rpi
@@ -305,7 +326,7 @@ install)
     [ -f "$path" ] || die 'Raspberry Pi RDP setup script is not installed'
     exec "$path" "$2"
   fi
-  [ "$#" -eq 2 ] || die 'usage: cgl install <package> | cgl install rdp -os <rpi|ubuntu> | cgl install <-revoke|-rst|-fix> rdp -os rpi'
+  [ "$#" -eq 2 ] || die 'usage: cgl install <package> | cgl install qmle | cgl install -update qmle | cgl install -revoke qmle | cgl install rdp -os <rpi|ubuntu> | cgl install <-revoke|-rst|-fix> rdp -os rpi'
   pm="$(detect_pm)"
   pm_update "$pm"
   pm_install "$pm" "$2"
