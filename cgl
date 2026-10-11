@@ -68,7 +68,8 @@ detect_pm() {
   elif command -v pacman >/dev/null 2>&1; then printf 'pacman\n'
   elif command -v zypper >/dev/null 2>&1; then printf 'zypper\n'
   elif command -v apk >/dev/null 2>&1; then printf 'apk\n'
-  else die "no supported Linux package manager found"; fi
+  elif command -v brew >/dev/null 2>&1; then printf 'brew\n'
+  else die "no supported package manager found"; fi
 }
 
 apt_repo_available() {
@@ -102,6 +103,7 @@ pm_update() {
     pacman) as_root pacman -Syu --noconfirm ;;
     zypper) as_root zypper --non-interactive refresh ;;
     apk) as_root apk update ;;
+    brew) brew update ;;
   esac
 }
 
@@ -113,6 +115,7 @@ pm_upgrade() {
     pacman) : ;; # pacman -Syu is already performed by pm_update.
     zypper) as_root zypper --non-interactive update ;;
     apk) as_root apk upgrade ;;
+    brew) brew upgrade ;;
   esac
 }
 
@@ -124,6 +127,7 @@ pm_install() {
     pacman) as_root pacman -S --noconfirm "$2" ;;
     zypper) as_root zypper --non-interactive install "$2" ;;
     apk) as_root apk add "$2" ;;
+    brew) brew install "$2" ;;
   esac
 }
 
@@ -135,6 +139,7 @@ pm_remove() {
     pacman) as_root pacman -R --noconfirm "$2" ;;
     zypper) as_root zypper --non-interactive remove "$2" ;;
     apk) as_root apk del "$2" ;;
+    brew) brew uninstall "$2" ;;
   esac
 }
 
@@ -201,6 +206,7 @@ pm_search() {
     pacman) pacman -Ss "$2" ;;
     zypper) zypper search "$2" ;;
     apk) apk search "$2" ;;
+    brew) brew search "$2" ;;
   esac
 }
 
@@ -333,6 +339,14 @@ install)
   pm_update "$pm"
   pm_install "$pm" "$2"
   ;;
+stop)
+  if command -v systemctl >/dev/null 2>&1; then
+    as_root systemctl stop cgl-rdp-web.service 2>/dev/null || true
+  fi
+  if command -v docker >/dev/null 2>&1; then
+    docker stop umbrel >/dev/null 2>&1 || true
+  fi
+  ;;
 hello)
   hello
   ;;
@@ -354,11 +368,7 @@ list)
   ;;
 doctor)
   pm="$(detect_pm 2>/dev/null || printf 'none')"
-  printf 'CGL+ doctor
-Version: %s
-Root: %s
-Package manager: %s
-' "$CGL_VERSION" "$CGL_ROOT" "$pm"
+  printf 'CGL+ doctor\nVersion: %s\nRoot: %s\nPackage manager: %s\n' "$CGL_VERSION" "$CGL_ROOT" "$pm"
   ;;
 *) die "unknown command '$1'; run 'cgl help'" ;;
 esac
