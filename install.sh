@@ -45,4 +45,12 @@ else
   gpg --dearmor < "$T" | sudo tee "$KEYRING" >/dev/null; sudo chmod 0644 "$KEYRING"
   printf 'deb [signed-by=%s] %s stable main\n' "$KEYRING" "$URL" | sudo tee "$SOURCES" >/dev/null
 fi
-printf '%s\n' "CGL+ APT repository configured." "Run: sudo apt update && sudo apt install cgl"
+printf '%s\n' "CGL+ APT repository configured." "Installing CGL+..."
+if [ "$(id -u)" -eq 0 ]; then
+  apt-get update
+  DEBIAN_FRONTEND=noninteractive apt-get install -y cgl
+else
+  sudo apt-get update
+  sudo apt-get install -y cgl
+fi
+printf '%s\n' "CGL+ installation complete." "Run: cgl version"
