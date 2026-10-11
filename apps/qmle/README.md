@@ -2,7 +2,18 @@
 
 A local Python/Pygame desktop prototype for hybrid text encryption. The interface uses the CGL+ yellow-and-dark theme.
 
-## Run
+## Install through CGL+
+
+```bash
+cgl install qmle
+qmle
+cgl install -update qmle
+cgl install -revoke qmle
+```
+
+Revoking QMLE removes its launcher, source files, and virtual environment but deliberately keeps `~/.config/qmle/` key files. Back up those keys before manually deleting them; existing ciphertext depends on the matching private key.
+
+## Run manually
 
 Python 3.15 is the intended interpreter for the current development setup.
 
