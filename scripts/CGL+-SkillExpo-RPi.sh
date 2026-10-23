@@ -48,8 +48,8 @@ EOF
     connection.autoconnect yes \
     connection.autoconnect-priority 100
   hostnamectl set-hostname cgl-labz
-  systemctl restart dnsmasq
   nmcli connection up "$CONNECTION"
+  systemctl restart dnsmasq
   systemctl restart avahi-daemon
   printf '\nCGL+ LabZ access point configured:\n'
   printf '  SSID: %s\n  Password: %s\n' "$SSID" "$PASSWORD"
