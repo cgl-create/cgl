@@ -1,134 +1,98 @@
 #!/bin/sh
 set -eu
 
-# SkillExpo installation manages system-wide files and services. Re-exec through
-# sudo automatically so users can run cgl install without typing sudo.
+# Install or update the CGL+ LabZ local dashboard and standalone Wi-Fi AP.
 if [ "$(id -u)" -ne 0 ]; then
-  if command -v sudo >/dev/null 2>&1; then
-    exec sudo "$0" "$@"
-  fi
+  if command -v sudo >/dev/null 2>&1; then exec sudo "$0" "$@"; fi
   printf '%s\n' "CGL+ LabZ: root privileges are required and sudo is not installed." >&2
   exit 1
 fi
 
 EXPECTED_KEY="aqs-skille-key1"
 ROOT="/opt/cgl-labz"
-RAW_BASE="https://raw.githubusercontent.com/cgl-create/cgl/main/packages/skille-secret/rpi"
-
+RAW_BASE="https://raw.githubusercontent.com/cgl-create/cgl/feature/skille-ap-arduino/packages/skille-secret/rpi"
+SSID="CGL+ AP 1"
+PASSWORD="CGL+LabZ-AP1"
+CONNECTION="CGL-LabZ-AP"
 die() { printf 'CGL+ LabZ: %s\n' "$*" >&2; exit 1; }
 check_key() { [ "$1" = "$EXPECTED_KEY" ] || die "invalid SkillExpo Project Key"; }
-spinner() {
-  case "$1" in
-    0) printf '%s' '⠋' ;; 1) printf '%s' '⠙' ;; 2) printf '%s' '⠹' ;; 3) printf '%s' '⠸' ;;
-    4) printf '%s' '⠼' ;; 5) printf '%s' '⠴' ;; 6) printf '%s' '⠦' ;; 7) printf '%s' '⠧' ;;
-    8) printf '%s' '⠇' ;; *) printf '%s' '⠏' ;;
-  esac
-}
-progress_bar() {
-  current="$1"
-  total="$2"
-  width=30
-  filled=$(( current * width / total ))
-  empty=$(( width - filled ))
-  bar=""
-  i=0
-  while [ "$i" -lt "$filled" ]; do
-    bar="${bar}█"
-    i=$((i + 1))
-  done
-  i=0
-  while [ "$i" -lt "$empty" ]; do
-    bar="${bar} "
-    i=$((i + 1))
-  done
-  printf "[%s] %s/%s" "$bar" "$current" "$total"
-}
-run_with_spinner() {
-  step="$1"
-  label="$2"
-  shift 2
-  i=0
-  log="/tmp/cgl-skill-step-$$.log"
-  "$@" >"$log" 2>&1 &
-  pid=$!
 
-  # Use animated terminal layout only on a real TTY; keep SSH logs readable.
-  if [ -t 1 ]; then
-    printf '%s %s\n' "$label" "$(spinner "$i")"
-    printf '\n\n\n\n\n'
-    progress_bar "$step" "$TOTAL_STEPS"
-    while kill -0 "$pid" 2>/dev/null; do
-      printf '\033[6A\033[2K\r%s %s\n' "$label" "$(spinner "$i")"
-      printf '\033[5B\033[2K\r'
-      progress_bar "$step" "$TOTAL_STEPS"
-      printf '\033[1A'
-      i=$(( (i + 1) % 10 ))
-      sleep 0.08
-    done
-    wait "$pid"
-    printf '\033[6A\033[2K\r%s ✓\n' "$label"
-    printf '\033[5B\033[2K\r'
-    progress_bar "$step" "$TOTAL_STEPS"
-    printf '\n'
-  else
-    wait "$pid"
-    printf '%s ✓\n' "$label"
-    progress_bar "$step" "$TOTAL_STEPS"
-    printf '\n'
+configure_ap() {
+  command -v nmcli >/dev/null 2>&1 || die "NetworkManager/nmcli is unavailable. Install NetworkManager, then rerun cgl update."
+  systemctl enable --now NetworkManager
+  systemctl enable --now avahi-daemon
+  install -d -m 0755 /etc/dnsmasq.d
+  cat > /etc/dnsmasq.d/cgl-labz-ap.conf <<'EOF'
+# DHCP only on the standalone CGL+ LabZ AP. No DNS forwarder or internet gateway.
+interface=wlan0
+bind-interfaces
+dhcp-authoritative
+dhcp-range=192.168.4.20,192.168.4.200,255.255.255.0,12h
+dhcp-option=3
+dhcp-option=6
+EOF
+  if nmcli -t -f NAME connection show | grep -Fxq "$CONNECTION"; then
+    nmcli connection delete "$CONNECTION"
   fi
-  rm -f "$log"
+  nmcli connection add type wifi ifname wlan0 con-name "$CONNECTION" ssid "$SSID"
+  nmcli connection modify "$CONNECTION" \
+    802-11-wireless.mode ap \
+    802-11-wireless.band bg \
+    802-11-wireless.channel 6 \
+    wifi-sec.key-mgmt wpa-psk \
+    wifi-sec.psk "$PASSWORD" \
+    ipv4.method manual \
+    ipv4.addresses 192.168.4.1/24 \
+    ipv4.never-default yes \
+    ipv6.method disabled \
+    connection.autoconnect yes \
+    connection.autoconnect-priority 100
+  hostnamectl set-hostname cgl-labz
+  nmcli connection up "$CONNECTION"
+  systemctl restart dnsmasq
+  systemctl restart avahi-daemon
+  printf '\nCGL+ LabZ access point configured:\n'
+  printf '  SSID: %s\n  Password: %s\n' "$SSID" "$PASSWORD"
+  printf '  Dashboard: http://cgl-labz.local:5000\n'
+  printf '  Fallback:  http://192.168.4.1:5000\n'
 }
-run_step() {
-  current="$1"
-  label="$2"
-  shift 2
-  run_with_spinner "$current" "$label" "$@"
-}
+
 install_project() {
-  key="$1"
-  check_key "$key"
-  TOTAL_STEPS=7
+  check_key "$1"
   mkdir -p "$ROOT"
-  printf '[1/%s] Preparing SkillExpo package ✓\n' "$TOTAL_STEPS"
-  progress_bar 1 "$TOTAL_STEPS"
-  printf "\n"
-  run_step 2 "[2/$TOTAL_STEPS] Downloading MQ-2 project files" curl -fsSL "$RAW_BASE/app.py" -o "$ROOT/app.py"
-  run_step 3 "[3/$TOTAL_STEPS] Downloading package configuration" sh -c 'curl -fsSL "$1/requirements.txt" -o "$2/requirements.txt" && curl -fsSL "$1/cgl-labz.service" -o /tmp/cgl-labz.service' sh "$RAW_BASE" "$ROOT"
-  install -m 0644 /tmp/cgl-labz.service /etc/systemd/system/cgl-labz.service
-  rm -f /tmp/cgl-labz.service
-  printf '[4/%s] Installing service configuration ✓\n' "$TOTAL_STEPS"
-  progress_bar 4 "$TOTAL_STEPS"
-  printf "\n"
-  run_step 5 "[5/$TOTAL_STEPS] Updating package index" apt-get update
-  run_step 6 "[6/$TOTAL_STEPS] Installing GPIO libraries" apt-get install -y python3-gpiozero python3-lgpio
-  run_step 7 "[7/$TOTAL_STEPS] Enabling and restarting SkillExpo service" sh -c 'systemctl daemon-reload && systemctl enable cgl-labz.service >/dev/null && systemctl restart cgl-labz.service'
-  printf "\r"
-  progress_bar "$TOTAL_STEPS" "$TOTAL_STEPS"
-  printf '\n\nCGL+ LabZ | SkillExpo package successfully updated.\n'
+  apt-get update
+  DEBIAN_FRONTEND=noninteractive apt-get install -y python3 python3-serial network-manager dnsmasq avahi-daemon
+  curl -fsSL "$RAW_BASE/app.py" -o "$ROOT/app.py"
+  curl -fsSL "$RAW_BASE/requirements.txt" -o "$ROOT/requirements.txt"
+  curl -fsSL "$RAW_BASE/cgl-labz.service" -o /etc/systemd/system/cgl-labz.service
+  chmod 0644 "$ROOT/app.py" "$ROOT/requirements.txt" /etc/systemd/system/cgl-labz.service
+  configure_ap
+  systemctl daemon-reload
+  systemctl enable --now cgl-labz.service
+  systemctl restart cgl-labz.service
+  printf '\nCGL+ LabZ installed/updated.\n'
 }
-case "$1" in
+
+case "${1:-}" in
 install)
   if [ "$#" -ge 2 ]; then key="$2"; else
-    printf '%s\n' "CGL+ LabZ | SkillExpo Project Download"
-    printf '%s ' "Please Enter Your SkillExpo Project Key : "
+    printf '%s ' "Please Enter Your SkillExpo Project Key: "
     read -r key
   fi
   install_project "$key"
   ;;
 update)
   if [ "$#" -eq 1 ]; then
-    printf '%s\n' "CGL+ LabZ | SkillExpo Project Update"
-    printf '%s ' "Please Enter Your SkillExpo Project Key : "
+    printf '%s ' "Please Enter Your SkillExpo Project Key: "
     read -r key
   else
     [ "$2" = "-key" ] && [ "$#" -eq 3 ] || die "usage: cgl update -pkg skille-secret [-os rpi] [-key <project-key>]"
     key="$3"
   fi
   install_project "$key"
-  printf '%s\n' "CGL+ LabZ | SkillExpo package updated."
   ;;
 run)
-  [ "$2" = "-key" ] && [ "$3" = "$EXPECTED_KEY" ] || die "usage: cgl run skille-secret -os rpi -key aqs-skille-key1"
+  [ "${2:-}" = "-key" ] && [ "${3:-}" = "$EXPECTED_KEY" ] || die "usage: cgl run skille-secret -os rpi -key aqs-skille-key1"
   systemctl start cgl-labz.service
   systemctl --no-pager --full status cgl-labz.service
   ;;
