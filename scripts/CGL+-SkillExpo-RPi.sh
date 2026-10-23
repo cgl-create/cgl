@@ -10,7 +10,7 @@ fi
 
 EXPECTED_KEY="aqs-skille-key1"
 ROOT="/opt/cgl-labz"
-RAW_BASE="https://raw.githubusercontent.com/cgl-create/cgl/feature/skille-ap-arduino/packages/skille-secret/rpi"
+RAW_BASE="https://raw.githubusercontent.com/cgl-create/cgl/main/packages/skille-secret/rpi"
 SSID="CGL+ AP 1"
 PASSWORD="CGL+LabZ-AP1"
 CONNECTION="CGL-LabZ-AP"
