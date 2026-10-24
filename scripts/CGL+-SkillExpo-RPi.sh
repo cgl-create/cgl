@@ -11,6 +11,7 @@ fi
 EXPECTED_KEY="aqs-skille-key1"
 ROOT="/opt/cgl-labz"
 RAW_BASE="https://raw.githubusercontent.com/cgl-create/cgl/main/packages/skille-secret/rpi"
+AP_SERVICE_URL="https://raw.githubusercontent.com/cgl-create/cgl/main/packages/skille-secret/rpi/cgl-labz-ap.service"
 SSID="CGL+ AP 1"
 PASSWORD="CGL+LabZ-AP1"
 CONNECTION="CGL-LabZ-AP"
@@ -21,6 +22,8 @@ configure_ap() {
   command -v nmcli >/dev/null 2>&1 || die "NetworkManager/nmcli is unavailable. Install NetworkManager, then rerun cgl update."
   systemctl enable --now NetworkManager
   systemctl enable --now avahi-daemon
+  rfkill unblock wifi 2>/dev/null || true
+  nmcli radio wifi on
   install -d -m 0755 /etc/dnsmasq.d
   cat > /etc/dnsmasq.d/cgl-labz-ap.conf <<'EOF'
 # DHCP only on the standalone CGL+ LabZ AP. No DNS forwarder or internet gateway.
@@ -49,7 +52,7 @@ EOF
     connection.autoconnect-priority 100
   hostnamectl set-hostname cgl-labz
   nmcli connection up "$CONNECTION"
-  systemctl restart dnsmasq
+  systemctl enable --now dnsmasq
   systemctl restart avahi-daemon
   printf '\nCGL+ LabZ access point configured:\n'
   printf '  SSID: %s\n  Password: %s\n' "$SSID" "$PASSWORD"
@@ -61,13 +64,15 @@ install_project() {
   check_key "$1"
   mkdir -p "$ROOT"
   apt-get update
-  DEBIAN_FRONTEND=noninteractive apt-get install -y python3 python3-serial network-manager dnsmasq avahi-daemon
+  DEBIAN_FRONTEND=noninteractive apt-get install -y python3 python3-serial network-manager dnsmasq avahi-daemon rfkill
   curl -fsSL "$RAW_BASE/app.py" -o "$ROOT/app.py"
   curl -fsSL "$RAW_BASE/requirements.txt" -o "$ROOT/requirements.txt"
   curl -fsSL "$RAW_BASE/cgl-labz.service" -o /etc/systemd/system/cgl-labz.service
-  chmod 0644 "$ROOT/app.py" "$ROOT/requirements.txt" /etc/systemd/system/cgl-labz.service
+  curl -fsSL "$AP_SERVICE_URL" -o /etc/systemd/system/cgl-labz-ap.service
+  chmod 0644 "$ROOT/app.py" "$ROOT/requirements.txt" /etc/systemd/system/cgl-labz.service /etc/systemd/system/cgl-labz-ap.service
   configure_ap
   systemctl daemon-reload
+  systemctl enable --now cgl-labz-ap.service
   systemctl enable --now cgl-labz.service
   systemctl restart cgl-labz.service
   printf '\nCGL+ LabZ installed/updated.\n'
