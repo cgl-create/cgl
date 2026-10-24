@@ -16,7 +16,10 @@ Tunnel is needed at the expo.
 - No gateway or DNS server is advertised, so the AP is intended to be isolated.
 
 The installer configures NetworkManager, dnsmasq (DHCP only), and Avahi (the
-`.local` hostname). Raspberry Pi OS must have NetworkManager managing `wlan0`.
+`.local` hostname). It also enables `cgl-labz-ap.service`, which unblocks Wi-Fi,
+turns the radio on, and retries bringing up the saved AP profile during boot.
+The dashboard service is ordered after the AP startup service. Raspberry Pi OS
+must have NetworkManager managing `wlan0`.
 The Pi's built-in Wi-Fi supports AP mode; a connection already using `wlan0`
 will be replaced by this AP profile.
 
