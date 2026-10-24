@@ -21,6 +21,7 @@ _state = {
     "status": "CONNECTING",
     "connected": False,
     "raw": None,
+    "ao": None,
     "alert": False,
     "warming": True,
     "led": "yellow",
@@ -79,6 +80,7 @@ def _serial_worker():
                                     status=status,
                                     connected=True,
                                     raw=incoming.get("raw"),
+                                    ao=incoming.get("ao"),
                                     alert=alert,
                                     warming=warming,
                                     led=str(incoming.get("led", "yellow" if warming else ("red" if alert else "green"))),
@@ -112,8 +114,8 @@ main{width:min(780px,100%)}header{display:flex;align-items:center;gap:13px;margi
 </style></head><body><main>
 <header><div class="mark">+</div><div><h1>CGL+ LabZ</h1><div class="sub">SkillExpo · MQ-2 gas and smoke prototype</div></div><div class="pill"><span class="dot" id="dot"></span><span id="link">Connecting</span></div></header>
 <section><div class="eyebrow">Live sensor status</div><div class="status yellow" id="status">CONNECTING</div><div class="detail" id="detail">Waiting for the Arduino Uno…</div>
-<div class="grid"><div class="tile"><div class="label">MQ-2 digital output</div><div class="value" id="raw">—</div></div><div class="tile"><div class="label">Traffic-light LED</div><div class="value" id="led">—</div></div><div class="tile"><div class="label">Outputs</div><div class="value" id="outputs">—</div></div></div>
-<p class="foot">This display reflects the Arduino's digital threshold output; it does not report calibrated concentration, ppm, or certified air-quality measurements. The MQ-2 module needs proper sensor conditioning. Do not use this prototype as a life-safety alarm.</p></section>
+<div class="grid"><div class="tile"><div class="label">MQ-2 analog output (AO)</div><div class="value" id="ao">— / 1023</div><div class="detail" id="aoPct">Raw ADC reading</div></div><div class="tile"><div class="label">MQ-2 digital output (DO)</div><div class="value" id="raw">—</div></div><div class="tile"><div class="label">Traffic-light LED</div><div class="value" id="led">—</div></div><div class="tile"><div class="label">Outputs</div><div class="value" id="outputs">—</div></div></div>
+<p class="foot">AO is a raw 10-bit ADC reading (0–1023), not calibrated concentration, ppm, or certified AQI. DO reflects the module's adjustable digital threshold. The MQ-2 module needs proper sensor conditioning. Do not use this prototype as a life-safety alarm.</p></section>
 <div class="foot">Local-only dashboard · <span class="gold">CGL+ LabZ</span></div>
 </main><script>
 const $=id=>document.getElementById(id);
@@ -122,6 +124,8 @@ $('link').textContent=d.connected?'Arduino connected':'Arduino disconnected';$('
 const s=$('status');s.textContent=d.status+(d.status==='WARMUP'?' · WARMING UP':'');s.className='status '+(d.status==='ALERT'?'red':d.status==='NORMAL'?'green':'yellow');
 $('detail').textContent=d.status==='ALERT'?'Threshold triggered · Check the area and follow expo safety procedures.':d.status==='NORMAL'?'No threshold alert reported by the module.':'Waiting for stable sensor readings.';
 $('raw').textContent=d.raw===null?'—':(Number(d.raw)===0?'LOW (0)':'HIGH (1)');
+$('ao').textContent=d.ao===null||d.ao===undefined?'— / 1023':Number(d.ao)+' / 1023';
+$('aoPct').textContent=d.ao===null||d.ao===undefined?'Waiting for AO data':(Number(d.ao)/1023*100).toFixed(1)+'% of ADC range · raw only';
 $('led').textContent=(d.led||'—').toUpperCase();$('led').className='value '+(d.led==='red'?'red':d.led==='green'?'green':'yellow');
 $('outputs').textContent='Fan '+(Number(d.motor)>0?'ON':'OFF')+' · Buzzer '+(d.buzzer?'ON':'OFF');
 if(!d.connected&&d.error)$('detail').textContent='Serial: '+d.error;
