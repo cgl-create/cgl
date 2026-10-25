@@ -16,19 +16,24 @@ Tunnel is needed at the expo.
 - No gateway or DNS server is advertised, so the AP is intended to be isolated.
 
 The installer configures NetworkManager, dnsmasq (DHCP only), and Avahi (the
-`.local` hostname). It also enables `cgl-labz-ap.service`, which unblocks Wi-Fi,
-turns the radio on, and retries bringing up the saved AP profile during boot.
-The dashboard service is ordered after the AP startup service. Raspberry Pi OS
-must have NetworkManager managing `wlan0`.
-The Pi's built-in Wi-Fi supports AP mode; a connection already using `wlan0`
-will be replaced by this AP profile.
+`.local` hostname). The enabled `cgl-labz-ap.service` is a persistent
+supervisor: it turns Wi-Fi on, attempts to activate the saved AP profile, and
+checks every 10 seconds to recover if the connection drops. It uses
+`Type=simple`, so its process remains running and systemd can restart it if
+the supervisor exits unexpectedly. The dashboard service is ordered after the
+AP supervisor. Raspberry Pi OS must have NetworkManager managing `wlan0`.
+
+The Pi's built-in Wi-Fi supports AP mode. The AP profile is assigned to
+`wlan0` and given a high autoconnect priority.
 
 ## Install/update on Raspberry Pi OS Lite
 
 Use the CGL CLI's SkillExpo package install/update flow with the project key.
-The installer installs the local services and enables the AP and dashboard at
-boot. If updating a pre-existing installation, it will replace the previous
-Wi-Fi profile on `wlan0` with `CGL-LabZ-AP`.
+The installer installs the local services and enables the AP supervisor and
+dashboard at boot. It configures the `CGL-LabZ-AP` NetworkManager profile
+without requiring the first AP activation to succeed during configuration;
+the service handles activation and retries after installation and on later
+boots.
 
 ## Arduino wiring
 

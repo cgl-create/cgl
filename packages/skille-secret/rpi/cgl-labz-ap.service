@@ -1,16 +1,15 @@
 [Unit]
-Description=CGL+ LabZ Wi-Fi access point startup
+Description=CGL+ LabZ Wi-Fi access point supervisor
 Wants=NetworkManager.service
 After=NetworkManager.service
 Before=cgl-labz.service
 
 [Service]
-Type=oneshot
-RemainAfterExit=yes
+Type=simple
 ExecStartPre=-/usr/sbin/rfkill unblock wifi
-ExecStart=/bin/sh -c '/usr/bin/nmcli radio wifi on; i=0; while [ "$i" -lt 30 ]; do /usr/bin/nmcli connection up CGL-LabZ-AP && exit 0; i=$((i+1)); sleep 2; done; exit 1'
+ExecStart=/bin/sh -c ' /usr/bin/nmcli radio wifi on || true; while :; do if ! /usr/bin/nmcli -t -f NAME connection show --active | /usr/bin/grep -Fxq "CGL-LabZ-AP"; then /usr/bin/nmcli connection up CGL-LabZ-AP || true; fi; sleep 10; done '
 Restart=on-failure
-RestartSec=10
+RestartSec=5
 
 [Install]
 WantedBy=multi-user.target
