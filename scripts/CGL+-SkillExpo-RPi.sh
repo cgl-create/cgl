@@ -31,7 +31,7 @@ dhcp-option=3
 dhcp-option=6
 EOF
   if nmcli -t -f NAME connection show | grep -Fxq "$CONNECTION"; then
-    nmcli connection modify "$CONNECTION" connection.interface-name wlan0 connection.autoconnect yes connection.autoconnect-priority 100
+    nmcli connection modify "$CONNECTION" connection.interface-name wlan0
   else
     nmcli connection add type wifi ifname wlan0 con-name "$CONNECTION" ssid "$SSID"
   fi
@@ -48,7 +48,7 @@ EOF
     connection.autoconnect yes \
     connection.autoconnect-priority 100
   hostnamectl set-hostname cgl-labz
-  # AP activation is handled by the persistent systemd supervisor below.
+  # Activation and recovery are managed by the persistent systemd supervisor.
   systemctl enable --now dnsmasq
   systemctl restart avahi-daemon
 }
@@ -72,10 +72,20 @@ install_project() {
 }
 
 case "${1:-}" in
-  install|update)
+  install)
     if [ "$#" -ge 2 ]; then key="$2"; else
       printf '%s ' "Please Enter Your SkillExpo Project Key: "
       read -r key
+    fi
+    install_project "$key"
+    ;;
+  update)
+    if [ "$#" -eq 1 ]; then
+      printf '%s ' "Please Enter Your SkillExpo Project Key: "
+      read -r key
+    else
+      [ "$2" = "-key" ] && [ "$#" -eq 3 ] || die "usage: cgl update -pkg skille-secret [-os rpi] [-key <project-key>]"
+      key="$3"
     fi
     install_project "$key"
     ;;
