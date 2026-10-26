@@ -18,7 +18,7 @@ const byte MOTOR_PWM = 9;
 
 const bool LED_COMMON_ANODE = false;
 const bool ALERT_WHEN_LOW = true;
-const bool ENABLE_SERIAL_TELEMETRY = false; // Set true only when using a Pi/PC dashboard.
+const bool ENABLE_SERIAL_TELEMETRY = true; // Required for the live Pi dashboard; outputs work independently.
 const unsigned long STARTUP_MS = 60000UL;
 const unsigned long REPORT_MS = 1000UL;
 
