@@ -29,7 +29,6 @@ _state = {
     "buzzer": False,
     "updated": None,
     "serial_port": None,
-    "source": None,
     "error": "Waiting for Arduino serial data",
 }
 
@@ -136,7 +135,6 @@ def _serial_worker():
                                     buzzer=bool(incoming.get("buzzer", alert)),
                                     updated=time.time(),
                                     serial_port=port,
-                                    source="arduino",
                                     error=None,
                                 )
                 except (OSError, SerialException) as exc:
@@ -181,7 +179,7 @@ main{width:min(780px,100%)}header{display:flex;align-items:center;gap:13px;margi
 </main><script>
 const $=id=>document.getElementById(id);
 async function refresh(){try{const r=await fetch('/api/status',{cache:'no-store'});if(!r.ok)throw Error('HTTP '+r.status);const d=await r.json();
-$('link').textContent=d.connected?(d.source==='cirkit'?'Cirkit simulation connected':'Arduino connected'):'Not connected';$('dot').style.background=d.connected?'#66df93':'#ff6262';
+$('link').textContent=d.connected?'Arduino connected':'Arduino disconnected';$('dot').style.background=d.connected?'#66df93':'#ff6262';
 const s=$('status');s.textContent=d.status;s.className='status '+(d.status==='ALERT'?'red':d.status==='NORMAL'?'green':'yellow');
 $('detail').textContent=d.status==='ALERT'?'Threshold triggered · Check the area and follow expo safety procedures.':d.status==='NORMAL'?'No threshold alert reported by the module.':'Waiting for live Arduino readings.';
 $('raw').textContent=d.raw===null?'—':(Number(d.raw)===0?'LOW (0)':'HIGH (1)');
@@ -196,70 +194,6 @@ refresh();setInterval(refresh,1000);
 
 
 class Handler(BaseHTTPRequestHandler):
-    def do_POST(self):
-        path = self.path.split("?", 1)[0].rstrip("/") or "/"
-        if path != "/api/simulate":
-            body = b'{"error":"not found"}'
-            self.send_response(404)
-            self.send_header("Content-Type", "application/json")
-            self.send_header("Cache-Control", "no-store")
-            self.send_header("Content-Length", str(len(body)))
-            self.end_headers()
-            self.wfile.write(body)
-            return
-
-        try:
-            length = int(self.headers.get("Content-Length", "0"))
-            if length <= 0 or length > 16384:
-                raise ValueError("Request body must be between 1 and 16384 bytes")
-            incoming = json.loads(self.rfile.read(length).decode("utf-8"))
-            if not isinstance(incoming, dict):
-                raise ValueError("JSON body must be an object")
-            analog = incoming.get("analog", incoming.get("ao"))
-            digital = incoming.get("digital", incoming.get("raw"))
-            if analog is None or digital is None:
-                raise ValueError("Provide analog/digital or ao/raw fields")
-            analog = int(analog)
-            digital = int(digital)
-            if not 0 <= analog <= 1023 or digital not in (0, 1):
-                raise ValueError("analog must be 0-1023 and digital must be 0 or 1")
-            alert_value = incoming.get("alert", False)
-            if isinstance(alert_value, str):
-                alert = alert_value.strip().lower() in ("1", "true", "yes", "on")
-            else:
-                alert = bool(alert_value)
-            buzzer = bool(incoming.get("buzzer", alert))
-            try:
-                motor = max(0, min(255, int(incoming.get("motor", 0) or 0)))
-            except (TypeError, ValueError):
-                motor = 0
-            with _lock:
-                _state.update(
-                    status="ALERT" if alert else "NORMAL",
-                    connected=True,
-                    raw=digital,
-                    ao=analog,
-                    alert=alert,
-                    warming=False,
-                    led="red" if alert else "green",
-                    motor=motor,
-                    buzzer=buzzer,
-                    updated=time.time(),
-                    serial_port=None,
-                    source="cirkit",
-                    error=None,
-                )
-            body = b'{"ok":true,"source":"cirkit"}'
-            self.send_response(200)
-        except (ValueError, TypeError, UnicodeDecodeError, json.JSONDecodeError) as exc:
-            body = json.dumps({"error": str(exc)}).encode()
-            self.send_response(400)
-        self.send_header("Content-Type", "application/json")
-        self.send_header("Cache-Control", "no-store")
-        self.send_header("Content-Length", str(len(body)))
-        self.end_headers()
-        self.wfile.write(body)
-
     def do_GET(self):
         path = self.path.split("?", 1)[0].rstrip("/") or "/"
         if path == "/health":
