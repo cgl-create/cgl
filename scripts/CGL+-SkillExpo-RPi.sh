@@ -13,7 +13,46 @@ RAW_BASE="https://raw.githubusercontent.com/cgl-create/cgl/main/packages/skille-
 CONNECTION="CGL-LabZ-AP"
 SSID="CGL+ AP 1"
 PASSWORD="CGL+LabZ-AP1"
+APT_CGL_SOURCE="/etc/apt/sources.list.d/cgl.list"
+APT_CGL_PRIMARY="https://packages.crazygamelabs.co.uk"
+APT_CGL_FALLBACK="https://raw.githubusercontent.com/cgl-create/cgl/gh-pages"
 die() { printf 'CGL+ LabZ: %s\n' "$*" >&2; exit 1; }
+
+apt_update_safe() {
+  # If the CGL+ package mirror is unavailable, switch its source to the
+  # maintained GitHub Pages mirror before apt-get update.
+  if [ -f "$APT_CGL_SOURCE" ] &&
+     grep -q 'packages.crazygamelabs.co.uk' "$APT_CGL_SOURCE" 2>/dev/null; then
+    if command -v curl >/dev/null 2>&1; then
+      if ! curl -fsSL --max-time 6 --proto '=https' --tlsv1.2 \
+        "$APT_CGL_PRIMARY/dists/stable/Release" >/dev/null 2>&1; then
+        if [ -f /usr/share/keyrings/cgl-archive-keyring.gpg ]; then
+          printf '%s\n' "CGL+ | Primary package mirror unavailable; switching to fallback."
+          printf '%s\n' "deb [signed-by=/usr/share/keyrings/cgl-archive-keyring.gpg] $APT_CGL_FALLBACK stable main" > "$APT_CGL_SOURCE"
+        else
+          printf '%s\n' "CGL+ | Primary package mirror unavailable; keeping existing APT sources." >&2
+        fi
+      fi
+    fi
+  fi
+  apt-get update
+}
+
+fetch_file() {
+  url="$1"
+  destination="$2"
+  temporary="${destination}.tmp"
+  rm -f "$temporary"
+  if command -v curl >/dev/null 2>&1; then
+    curl -fLsS --retry 3 --connect-timeout 10 "$url" -o "$temporary"
+  elif command -v wget >/dev/null 2>&1; then
+    wget -q --tries=3 --timeout=10 -O "$temporary" "$url"
+  else
+    die "curl or wget is required to download the CGL+ LabZ files."
+  fi
+  [ -s "$temporary" ] || die "download was empty: $url"
+  mv "$temporary" "$destination"
+}
 
 configure_ap() {
   command -v nmcli >/dev/null 2>&1 || die "NetworkManager/nmcli is unavailable."
@@ -24,7 +63,8 @@ configure_ap() {
   install -d -m 0755 /etc/dnsmasq.d
   cat > /etc/dnsmasq.d/cgl-labz-ap.conf <<'EOF'
 interface=wlan0
-bind-interfaces
+bind-dynamic
+port=0
 dhcp-authoritative
 dhcp-range=192.168.4.20,192.168.4.200,255.255.255.0,12h
 dhcp-option=3
@@ -56,13 +96,14 @@ EOF
 install_project() {
   [ "$1" = "$EXPECTED_KEY" ] || die "invalid SkillExpo Project Key"
   mkdir -p "$ROOT"
-  apt-get update
-  DEBIAN_FRONTEND=noninteractive apt-get install -y python3 python3-serial network-manager dnsmasq avahi-daemon rfkill
-  curl -fsSL "$RAW_BASE/app.py" -o "$ROOT/app.py"
-  curl -fsSL "$RAW_BASE/requirements.txt" -o "$ROOT/requirements.txt"
-  curl -fsSL "$RAW_BASE/cgl-labz.service" -o /etc/systemd/system/cgl-labz.service
-  curl -fsSL "$RAW_BASE/cgl-labz-ap.service" -o /etc/systemd/system/cgl-labz-ap.service
+  apt_update_safe
+  DEBIAN_FRONTEND=noninteractive apt-get install -y ca-certificates curl python3 python3-serial network-manager dnsmasq avahi-daemon rfkill iproute2
+  fetch_file "$RAW_BASE/app.py" "$ROOT/app.py"
+  fetch_file "$RAW_BASE/requirements.txt" "$ROOT/requirements.txt"
+  fetch_file "$RAW_BASE/cgl-labz.service" /etc/systemd/system/cgl-labz.service
+  fetch_file "$RAW_BASE/cgl-labz-ap.service" /etc/systemd/system/cgl-labz-ap.service
   chmod 0644 "$ROOT/app.py" "$ROOT/requirements.txt" /etc/systemd/system/cgl-labz.service /etc/systemd/system/cgl-labz-ap.service
+  /usr/bin/python3 -m py_compile "$ROOT/app.py" || die "dashboard Python syntax check failed."
   configure_ap
   systemctl daemon-reload
   systemctl enable --now cgl-labz-ap.service
