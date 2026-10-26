@@ -91,14 +91,22 @@ def _serial_worker():
 
                             if not isinstance(incoming, dict):
                                 continue
-                            if "raw" not in incoming or "ao" not in incoming:
+                            # Accept both the current Arduino sketch's analog/digital keys and the
+                            # older dashboard schema's ao/raw keys.
+                            raw_value = incoming.get("raw", incoming.get("digital"))
+                            ao_value = incoming.get("ao", incoming.get("analog"))
+                            if raw_value is None or ao_value is None:
                                 continue
 
                             last_valid = time.monotonic()
                             # This firmware has no software startup-delay state.
                             # Ignore stale/missing warming flags from older sketches.
                             warming = False
-                            alert = bool(incoming.get("alert", False))
+                            alert_value = incoming.get("alert", False)
+                            if isinstance(alert_value, str):
+                                alert = alert_value.strip().lower() in ("1", "true", "yes", "on")
+                            else:
+                                alert = bool(alert_value)
                             status = "ALERT" if alert else "NORMAL"
                             led = str(
                                 incoming.get(
@@ -118,13 +126,13 @@ def _serial_worker():
                                 _state.update(
                                     status=status,
                                     connected=True,
-                                    raw=incoming.get("raw"),
-                                    ao=incoming.get("ao"),
+                                    raw=raw_value,
+                                    ao=ao_value,
                                     alert=alert,
                                     warming=warming,
                                     led=led,
                                     motor=motor,
-                                    buzzer=bool(incoming.get("buzzer", False)),
+                                    buzzer=bool(incoming.get("buzzer", alert)),
                                     updated=time.time(),
                                     serial_port=port,
                                     error=None,
@@ -165,7 +173,7 @@ main{width:min(780px,100%)}header{display:flex;align-items:center;gap:13px;margi
 </style></head><body><main>
 <header><div class="mark">+</div><div><h1>CGL+ LabZ</h1><div class="sub">SkillExpo · MQ-2 gas and smoke prototype</div></div><div class="pill"><span class="dot" id="dot"></span><span id="link">Connecting</span></div></header>
 <section><div class="eyebrow">Live sensor status</div><div class="status yellow" id="status">CONNECTING</div><div class="detail" id="detail">Waiting for live Arduino readings…</div>
-<div class="grid"><div class="tile"><div class="label">MQ-2 analog output (AO)</div><div class="value" id="ao">— / 1023</div><div class="detail" id="aoPct">Raw ADC reading</div></div><div class="tile"><div class="label">MQ-2 digital output (DO)</div><div class="value" id="raw">—</div></div><div class="tile"><div class="label">Traffic-light LED</div><div class="value" id="led">—</div></div><div class="tile"><div class="label">Outputs</div><div class="value" id="outputs">—</div></div></div>
+<div class="grid"><div class="tile"><div class="label">MQ-2 analog output (AO)</div><div class="value" id="ao">— / 1023</div><div class="detail" id="aoPct">Raw ADC reading</div></div><div class="tile"><div class="label">MQ-2 digital output (DO)</div><div class="value" id="raw">—</div></div><div class="tile"><div class="label">LED status</div><div class="value" id="led">—</div></div><div class="tile"><div class="label">Outputs</div><div class="value" id="outputs">—</div></div></div>
 <p class="foot">AO is a raw 10-bit ADC reading (0–1023), not calibrated concentration, ppm, or certified AQI. DO reflects the module's adjustable digital threshold. The MQ-2 module needs proper sensor conditioning. Do not use this prototype as a life-safety alarm.</p></section>
 <div class="foot">Local-only dashboard · <span class="gold">CGL+ LabZ</span></div>
 </main><script>
