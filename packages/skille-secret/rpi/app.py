@@ -23,8 +23,8 @@ _state = {
     "raw": None,
     "ao": None,
     "alert": False,
-    "warming": True,
-    "led": "yellow",
+    "warming": False,
+    "led": "green",
     "motor": 0,
     "buzzer": False,
     "updated": None,
@@ -95,17 +95,19 @@ def _serial_worker():
                                 continue
 
                             last_valid = time.monotonic()
-                            warming = bool(incoming.get("warming", True))
-                            alert = bool(incoming.get("alert", False)) and not warming
-                            status = "WARMUP" if warming else ("ALERT" if alert else "NORMAL")
+                            # This firmware has no software startup-delay state.
+                            # Ignore stale/missing warming flags from older sketches.
+                            warming = False
+                            alert = bool(incoming.get("alert", False))
+                            status = "ALERT" if alert else "NORMAL"
                             led = str(
                                 incoming.get(
                                     "led",
-                                    "yellow" if warming else ("red" if alert else "green"),
+                                    "red" if alert else "green",
                                 )
                             ).lower()
-                            if led not in ("red", "yellow", "green"):
-                                led = "yellow" if warming else ("red" if alert else "green")
+                            if led not in ("red", "green"):
+                                led = "red" if alert else "green"
 
                             try:
                                 motor = max(0, min(255, int(incoming.get("motor", 0) or 0)))
@@ -162,7 +164,7 @@ PAGE = r'''<!doctype html>
 main{width:min(780px,100%)}header{display:flex;align-items:center;gap:13px;margin-bottom:24px}.mark{width:48px;height:48px;border-radius:15px;background:var(--gold);color:#151515;display:grid;place-items:center;font-weight:950;font-size:22px}h1{margin:0;color:var(--gold);font-size:clamp(24px,5vw,34px)}.sub{color:var(--muted);font-size:14px;margin-top:3px}.pill{margin-left:auto;border:1px solid var(--line);border-radius:99px;padding:7px 11px;font-size:12px;color:var(--muted);white-space:nowrap}.dot{display:inline-block;width:7px;height:7px;border-radius:50%;background:#777;margin-right:6px}section{border:1px solid var(--line);border-radius:24px;background:linear-gradient(145deg,#171717,#0e0e0e);padding:clamp(20px,5vw,34px);box-shadow:0 20px 70px #0008}.eyebrow{color:var(--muted);font-size:12px;text-transform:uppercase;letter-spacing:2px}.status{font-size:clamp(38px,10vw,64px);font-weight:850;letter-spacing:1px;margin:12px 0 4px;line-height:1.05}.detail{color:var(--muted);font-size:14px}.grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin-top:26px}.tile{background:#191919;border:1px solid #282828;border-radius:16px;padding:16px;min-width:0}.label{font-size:12px;color:var(--muted);margin-bottom:8px}.value{font-weight:700;font-size:18px;overflow-wrap:anywhere}.foot{font-size:12px;line-height:1.55;color:var(--muted);margin:20px 2px 0}.gold{color:var(--gold)}.red{color:#ff6262}.green{color:#66df93}.yellow{color:var(--gold)}@media(max-width:520px){body{padding:14px}.pill{font-size:10px;padding:6px 8px}.grid{grid-template-columns:1fr 1fr}.tile:last-child{grid-column:1/-1}.value{font-size:16px}}
 </style></head><body><main>
 <header><div class="mark">+</div><div><h1>CGL+ LabZ</h1><div class="sub">SkillExpo · MQ-2 gas and smoke prototype</div></div><div class="pill"><span class="dot" id="dot"></span><span id="link">Connecting</span></div></header>
-<section><div class="eyebrow">Live sensor status</div><div class="status yellow" id="status">CONNECTING</div><div class="detail" id="detail">Waiting for the Arduino Uno…</div>
+<section><div class="eyebrow">Live sensor status</div><div class="status yellow" id="status">CONNECTING</div><div class="detail" id="detail">Waiting for live Arduino readings…</div>
 <div class="grid"><div class="tile"><div class="label">MQ-2 analog output (AO)</div><div class="value" id="ao">— / 1023</div><div class="detail" id="aoPct">Raw ADC reading</div></div><div class="tile"><div class="label">MQ-2 digital output (DO)</div><div class="value" id="raw">—</div></div><div class="tile"><div class="label">Traffic-light LED</div><div class="value" id="led">—</div></div><div class="tile"><div class="label">Outputs</div><div class="value" id="outputs">—</div></div></div>
 <p class="foot">AO is a raw 10-bit ADC reading (0–1023), not calibrated concentration, ppm, or certified AQI. DO reflects the module's adjustable digital threshold. The MQ-2 module needs proper sensor conditioning. Do not use this prototype as a life-safety alarm.</p></section>
 <div class="foot">Local-only dashboard · <span class="gold">CGL+ LabZ</span></div>
@@ -170,13 +172,13 @@ main{width:min(780px,100%)}header{display:flex;align-items:center;gap:13px;margi
 const $=id=>document.getElementById(id);
 async function refresh(){try{const r=await fetch('/api/status',{cache:'no-store'});if(!r.ok)throw Error('HTTP '+r.status);const d=await r.json();
 $('link').textContent=d.connected?'Arduino connected':'Arduino disconnected';$('dot').style.background=d.connected?'#66df93':'#ff6262';
-const s=$('status');s.textContent=d.status+(d.status==='WARMUP'?' · WARMING UP':'');s.className='status '+(d.status==='ALERT'?'red':d.status==='NORMAL'?'green':'yellow');
-$('detail').textContent=d.status==='ALERT'?'Threshold triggered · Check the area and follow expo safety procedures.':d.status==='NORMAL'?'No threshold alert reported by the module.':'Waiting for stable sensor readings.';
+const s=$('status');s.textContent=d.status;s.className='status '+(d.status==='ALERT'?'red':d.status==='NORMAL'?'green':'yellow');
+$('detail').textContent=d.status==='ALERT'?'Threshold triggered · Check the area and follow expo safety procedures.':d.status==='NORMAL'?'No threshold alert reported by the module.':'Waiting for live Arduino readings.';
 $('raw').textContent=d.raw===null?'—':(Number(d.raw)===0?'LOW (0)':'HIGH (1)');
 $('ao').textContent=d.ao===null||d.ao===undefined?'— / 1023':Number(d.ao)+' / 1023';
 $('aoPct').textContent=d.ao===null||d.ao===undefined?'Waiting for AO data':(Number(d.ao)/1023*100).toFixed(1)+'% of ADC range · raw only';
 $('led').textContent=(d.led||'—').toUpperCase();$('led').className='value '+(d.led==='red'?'red':d.led==='green'?'green':'yellow');
-$('outputs').textContent='Fan '+(Number(d.motor)>0?'ON':'OFF')+' · Buzzer '+(d.buzzer?'ON':'OFF');
+$('outputs').textContent='Buzzer '+(d.buzzer?'ON':'OFF');
 if(!d.connected&&d.error)$('detail').textContent='Serial: '+d.error;
 }catch(e){$('link').textContent='Dashboard error';$('status').textContent='OFFLINE';$('status').className='status red';}}
 refresh();setInterval(refresh,1000);
