@@ -4,8 +4,8 @@
  * No Raspberry Pi, USB serial connection, network, or dashboard is needed
  * for sensor monitoring and local outputs.
  *
- * Optional telemetry: set ENABLE_SERIAL_TELEMETRY to true to emit one JSON
- * object per second over USB serial for an optional Pi/PC dashboard.
+ * USB telemetry is enabled by default for the Pi dashboard (9600 baud).
+ * Set ENABLE_SERIAL_TELEMETRY to false for Arduino-only use without telemetry.
  * AO is a raw 10-bit ADC reading, not calibrated ppm or AQI.
  */
 const byte MQ2_DO = 2;
