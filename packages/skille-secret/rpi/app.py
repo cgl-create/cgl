@@ -43,38 +43,75 @@ def _candidate_ports():
 
 
 def _serial_worker():
-    """Reconnect forever so unplugging/replugging the Arduino is recoverable."""
+    """Read telemetry, tolerate reconnects, and detect stale/missing firmware output."""
     while True:
-        connected_port = None
         try:
             import serial
             from serial import SerialException
+
             ports = _candidate_ports()
             if not ports:
                 with _lock:
-                    _state.update(connected=False, status="CONNECTING",
-                                  serial_port=None, error="Arduino not detected")
+                    _state.update(
+                        connected=False,
+                        status="CONNECTING",
+                        serial_port=None,
+                        error="Arduino not detected; check the USB data cable",
+                    )
                 time.sleep(2)
                 continue
+
             for port in ports:
                 try:
                     with serial.Serial(port, SERIAL_BAUD, timeout=2) as device:
-                        connected_port = port
+                        last_valid = None
                         with _lock:
-                            _state.update(connected=True, serial_port=port, error=None)
+                            _state.update(
+                                connected=False,
+                                status="CONNECTING",
+                                serial_port=port,
+                                error="Serial opened; waiting for Arduino telemetry",
+                            )
+
                         while True:
                             line = device.readline()
                             if not line:
+                                if last_valid is not None and time.monotonic() - last_valid > 8:
+                                    raise SerialException(
+                                        "No telemetry for 8 seconds; upload the current Arduino sketch and check 9600 baud"
+                                    )
                                 continue
+
                             try:
-                                incoming = json.loads(line.decode("utf-8", errors="replace").strip())
+                                incoming = json.loads(
+                                    line.decode("utf-8", errors="replace").strip()
+                                )
                             except (json.JSONDecodeError, UnicodeDecodeError):
                                 continue
+
                             if not isinstance(incoming, dict):
                                 continue
-                            warming = bool(incoming.get("warming", False))
+                            if "raw" not in incoming or "ao" not in incoming:
+                                continue
+
+                            last_valid = time.monotonic()
+                            warming = bool(incoming.get("warming", True))
                             alert = bool(incoming.get("alert", False)) and not warming
                             status = "WARMUP" if warming else ("ALERT" if alert else "NORMAL")
+                            led = str(
+                                incoming.get(
+                                    "led",
+                                    "yellow" if warming else ("red" if alert else "green"),
+                                )
+                            ).lower()
+                            if led not in ("red", "yellow", "green"):
+                                led = "yellow" if warming else ("red" if alert else "green")
+
+                            try:
+                                motor = max(0, min(255, int(incoming.get("motor", 0) or 0)))
+                            except (TypeError, ValueError):
+                                motor = 0
+
                             with _lock:
                                 _state.update(
                                     status=status,
@@ -83,8 +120,8 @@ def _serial_worker():
                                     ao=incoming.get("ao"),
                                     alert=alert,
                                     warming=warming,
-                                    led=str(incoming.get("led", "yellow" if warming else ("red" if alert else "green"))),
-                                    motor=int(incoming.get("motor", 0) or 0),
+                                    led=led,
+                                    motor=motor,
                                     buzzer=bool(incoming.get("buzzer", False)),
                                     updated=time.time(),
                                     serial_port=port,
@@ -92,15 +129,27 @@ def _serial_worker():
                                 )
                 except (OSError, SerialException) as exc:
                     with _lock:
-                        _state.update(connected=False, serial_port=connected_port,
-                                      error=str(exc)[:180])
+                        _state.update(
+                            connected=False,
+                            status="CONNECTING",
+                            serial_port=port,
+                            error=str(exc)[:180],
+                        )
         except ImportError:
             with _lock:
-                _state.update(connected=False, error="pyserial is not installed")
+                _state.update(
+                    connected=False,
+                    status="CONNECTING",
+                    error="pyserial is not installed; install package python3-serial",
+                )
             time.sleep(5)
         except Exception as exc:
             with _lock:
-                _state.update(connected=False, error=str(exc)[:180])
+                _state.update(
+                    connected=False,
+                    status="CONNECTING",
+                    error=str(exc)[:180],
+                )
         time.sleep(2)
 
 
