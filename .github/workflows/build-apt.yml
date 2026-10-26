@@ -17,13 +17,31 @@ concurrency:
 jobs:
   build:
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
 
-      - name: Build and test
+      - name: Install build dependencies
+        timeout-minutes: 5
         run: |
-          sudo apt-get update
-          sudo apt-get install -y dpkg-dev gnupg
+          set -eu
+          # Bound network retries/timeouts so a stalled Ubuntu mirror cannot
+          # hold the workflow open indefinitely.
+          timeout 4m sudo apt-get \
+            -o Acquire::Retries=1 \
+            -o Acquire::http::Timeout=15 \
+            -o Acquire::https::Timeout=15 \
+            update
+          timeout 3m sudo apt-get \
+            -o Acquire::Retries=1 \
+            -o Acquire::http::Timeout=15 \
+            -o Acquire::https::Timeout=15 \
+            install -y --no-install-recommends dpkg-dev gnupg
+
+      - name: Build and test
+        timeout-minutes: 5
+        run: |
+          set -eu
           chmod +x cgl scripts/*.sh
           ./scripts/build-deb.sh
           ./scripts/test.sh
@@ -46,7 +64,15 @@ jobs:
           test -f "$DEB"
 
           rm -rf public gnupg
-          mkdir -p             public/pool/main/c/cgl             public/public/pool/main/c/cgl             public/dists/stable/main/binary-all             public/dists/stable/main/binary-amd64             public/dists/stable/main/binary-arm64             public/dists/stable/main/binary-armhf             public/dists/stable/main/binary-i386             gnupg
+          mkdir -p \
+            public/pool/main/c/cgl \
+            public/public/pool/main/c/cgl \
+            public/dists/stable/main/binary-all \
+            public/dists/stable/main/binary-amd64 \
+            public/dists/stable/main/binary-arm64 \
+            public/dists/stable/main/binary-armhf \
+            public/dists/stable/main/binary-i386 \
+            gnupg
           chmod 700 gnupg
           export GNUPGHOME="$PWD/gnupg"
 
@@ -55,7 +81,7 @@ jobs:
           # Canonical package path.
           cp "$DEB" public/pool/main/c/cgl/
 
-          # Legacy package path retained for clients that cached old metadata.
+          # Legacy package path retained for compatibility.
           cp "$DEB" public/public/pool/main/c/cgl/
 
           (
@@ -119,9 +145,7 @@ jobs:
           chmod 0755 public/install.sh
           printf '%s\n' 'packages.crazygamelabs.co.uk' > public/CNAME
 
-          # Mirror the complete repository into /public as well. This supports
-          # GitHub Pages configurations whose source directory is gh-pages:/public
-          # while retaining the canonical repository at gh-pages:/.
+          # Mirror the complete repository into /public for legacy Pages paths.
           rm -rf public/public/dists public/public/install.sh public/public/CNAME public/public/cgl-archive-keyring.asc public/public/cgl-archive-keyring.gpg
           cp -a public/dists public/public/dists
           cp public/install.sh public/public/install.sh
@@ -153,6 +177,7 @@ jobs:
 
   test-macos:
     runs-on: macos-latest
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
       - name: Check macOS shell support
