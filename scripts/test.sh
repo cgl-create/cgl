@@ -1,8 +1,11 @@
 #!/bin/sh
 set -eu
 ROOT="$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)"
-test "$("$ROOT/cgl" version)" = 'cgl 1.0.30'
+EXPECTED_VERSION="$(sed -n 's/^Version: //p' "$ROOT/package/DEBIAN/control" | head -n1)"
+test -n "$EXPECTED_VERSION"
+test "$("$ROOT/cgl" version)" = "cgl $EXPECTED_VERSION"
 "$ROOT/cgl" help >/dev/null
+
 sh -n "$ROOT/cgl"
 sh -n "$ROOT/scripts/CGL+-RDP-RPi.sh"
 sh -n "$ROOT/scripts/CGL+-RDP-Web.sh"
@@ -10,10 +13,9 @@ sh -n "$ROOT/scripts/CGL+-Umbrel.sh"
 sh -n "$ROOT/install.sh"
 sh -n "$ROOT/scripts/CGL+-SkillExpo-RPi.sh"
 sh -n "$ROOT/scripts/CGL+-QMLE.sh"
+
 grep -F 'cgl install skille-secret -os rpi' "$ROOT/cgl" >/dev/null
 grep -F 'cgl install umbrel' "$ROOT/cgl" >/dev/null
-grep -F 'cgl install -update' "$ROOT/cgl" >/dev/null
-grep -F 'stop)' "$ROOT/cgl" >/dev/null
 grep -F 'cgl install -update' "$ROOT/cgl" >/dev/null
 grep -F 'stop)' "$ROOT/cgl" >/dev/null
 grep -F 'CGL+-Umbrel.sh' "$ROOT/cgl" >/dev/null
@@ -28,7 +30,6 @@ done
 grep -F 'cgl install -revoke rdp -os rpi' "$ROOT/cgl" >/dev/null
 grep -F 'cgl install -rst rdp -os rpi' "$ROOT/cgl" >/dev/null
 grep -F 'cgl install -fix rdp -os rpi' "$ROOT/cgl" >/dev/null
-
 grep -F 'raw.githubusercontent.com/cgl-create/cgl/gh-pages' "$ROOT/cgl" >/dev/null
 grep -F 'raw.githubusercontent.com/cgl-create/cgl/gh-pages' "$ROOT/install.sh" >/dev/null
 
@@ -51,4 +52,5 @@ grep -F 'cgl install qmle' "$ROOT/cgl" >/dev/null
 grep -F 'cgl install -update qmle' "$ROOT/cgl" >/dev/null
 grep -F 'cgl install -revoke qmle' "$ROOT/cgl" >/dev/null
 grep -F 'CGL+-QMLE.sh' "$ROOT/cgl" >/dev/null
+
 echo 'CGL+ tests passed.'
