@@ -1,99 +1,100 @@
 /*
- * CGL+ LabZ — standalone Arduino Uno firmware
- * The Arduino independently controls the MQ-2 alarm outputs.
- * No Raspberry Pi, USB serial connection, network, or dashboard is needed
- * for sensor monitoring and local outputs.
- *
- * USB telemetry is enabled by default for the Pi dashboard (9600 baud).
- * Set ENABLE_SERIAL_TELEMETRY to false for Arduino-only use without telemetry.
- * AO is a raw 10-bit ADC reading, not calibrated ppm or AQI.
- */
+  CGL+ LabZ — MQ-2 Air Quality Sensor (Analog Threshold 100 Version)
+  Board: Arduino UNO
+
+  Pin Mapping:
+  MQ-2 DO   -> D2
+  MQ-2 AO   -> A0
+  Red LED   -> D3 (through resistor)
+  Green LED -> D5 (through resistor)
+  Buzzer    -> D8
+  Common GND
+
+  Serial output: 9600 baud
+*/
+
+// Pin Configurations
 const byte MQ2_DO = 2;
 const byte MQ2_AO = A0;
-const byte LED_RED = 3;
-const byte LED_YELLOW = 4;
-const byte LED_GREEN = 5;
+const byte RED_LED = 3;
+const byte GREEN_LED = 5;
 const byte BUZZER = 8;
-const byte MOTOR_PWM = 9;
 
-const bool LED_COMMON_ANODE = false;
-const bool ALERT_WHEN_LOW = true;
-const bool ENABLE_SERIAL_TELEMETRY = true; // Required for the live Pi dashboard; outputs work independently.
-const unsigned long STARTUP_MS = 60000UL;
-const unsigned long REPORT_MS = 1000UL;
+// Timing Constants
+const unsigned long REPORT_INTERVAL = 1000;
+const unsigned long BUZZER_INTERVAL = 300;
 
-unsigned long bootMs = 0;
+// Custom Sensitivity Threshold lowered to 100
+const int ANALOG_THRESHOLD = 100;
+
+// Tracking Variables
 unsigned long lastReport = 0;
-unsigned long buzzerCycle = 0;
+unsigned long lastBuzzerToggle = 0;
 
-void setLed(byte pin, bool on) {
-  digitalWrite(pin, LED_COMMON_ANODE ? (on ? LOW : HIGH) : (on ? HIGH : LOW));
-}
-
-void setLights(bool red, bool yellow, bool green) {
-  setLed(LED_RED, red);
-  setLed(LED_YELLOW, yellow);
-  setLed(LED_GREEN, green);
-}
+bool alarmActive = false;
+bool buzzerState = false;
 
 void setup() {
+  // Initialize Input/Output Pins
   pinMode(MQ2_DO, INPUT);
-  pinMode(MQ2_AO, INPUT);
-  pinMode(LED_RED, OUTPUT);
-  pinMode(LED_YELLOW, OUTPUT);
-  pinMode(LED_GREEN, OUTPUT);
+  pinMode(RED_LED, OUTPUT);
+  pinMode(GREEN_LED, OUTPUT);
   pinMode(BUZZER, OUTPUT);
-  pinMode(MOTOR_PWM, OUTPUT);
 
-  if (ENABLE_SERIAL_TELEMETRY) {
-    Serial.begin(9600);
-  }
-
-  bootMs = millis();
-  setLights(false, true, false); // Yellow during startup.
+  // Set initial safe states (All outputs off)
+  digitalWrite(RED_LED, LOW);
+  digitalWrite(GREEN_LED, LOW);
   digitalWrite(BUZZER, LOW);
-  analogWrite(MOTOR_PWM, 0);
+
+  // Initialize Serial Communication for Dashboard Connection
+  Serial.begin(9600);
 }
 
 void loop() {
-  const unsigned long now = millis();
-  const bool warming = (now - bootMs) < STARTUP_MS;
-  const int digitalRaw = digitalRead(MQ2_DO);
-  const int analogRaw = analogRead(MQ2_AO);
-  const bool alert = ALERT_WHEN_LOW ? (digitalRaw == LOW) : (digitalRaw == HIGH);
-  bool buzzerOn = false;
+  unsigned long now = millis();
 
-  if (warming) {
-    setLights(false, true, false);
-    digitalWrite(BUZZER, LOW);
-    analogWrite(MOTOR_PWM, 0);
-  } else if (alert) {
-    setLights(true, false, false);
-    analogWrite(MOTOR_PWM, 255); // Full-speed command to the motor driver.
+  // Read raw values from the MQ-2 sensor
+  int digitalReading = digitalRead(MQ2_DO);
+  int analogReading = analogRead(MQ2_AO);
 
-    if (now - buzzerCycle >= 1000UL) {
-      buzzerCycle = now;
+  // ALERT CONDITION: Now triggers strictly when analog reading is greater than 100
+  alarmActive = (analogReading > ANALOG_THRESHOLD);
+
+  // --- Output Peripheral Management ---
+  if (alarmActive) {
+    // Dangerous Air: Red LED On, Green LED Off
+    digitalWrite(RED_LED, HIGH);
+    digitalWrite(GREEN_LED, LOW);
+
+    // Non-blocking oscillating buzzer alarm
+    if (now - lastBuzzerToggle >= BUZZER_INTERVAL) {
+      lastBuzzerToggle = now;
+      buzzerState = !buzzerState;
+      digitalWrite(BUZZER, buzzerState ? HIGH : LOW);
     }
-    buzzerOn = (now - buzzerCycle) < 250UL;
-    digitalWrite(BUZZER, buzzerOn ? HIGH : LOW);
   } else {
-    setLights(false, false, true);
+    // Clean Air: Red LED Off, Green LED On, Silence Buzzer
+    digitalWrite(RED_LED, LOW);
+    digitalWrite(GREEN_LED, HIGH);
     digitalWrite(BUZZER, LOW);
-    analogWrite(MOTOR_PWM, 0);
+
+    // Reset buzzer state variables
+    buzzerState = false;
+    lastBuzzerToggle = now;
   }
 
-  // USB telemetry is optional and is not involved in any control decisions.
-  if (ENABLE_SERIAL_TELEMETRY && now - lastReport >= REPORT_MS) {
+  // --- Serial Output JSON Telemetry for CGL+ Dashboard ---
+  if (now - lastReport >= REPORT_INTERVAL) {
     lastReport = now;
-    Serial.print("{\"raw\":"); Serial.print(digitalRaw);
-    Serial.print(",\"ao\":"); Serial.print(analogRaw);
-    Serial.print(",\"alert\":"); Serial.print((!warming && alert) ? "true" : "false");
-    Serial.print(",\"warming\":"); Serial.print(warming ? "true" : "false");
-    Serial.print(",\"led\":\""); Serial.print(warming ? "yellow" : (alert ? "red" : "green"));
-    Serial.print("\",\"motor\":"); Serial.print((!warming && alert) ? 255 : 0);
-    Serial.print(",\"buzzer\":"); Serial.print((!warming && alert && buzzerOn) ? "true" : "false");
+
+    // Outputs exact JSON packet format for the Pi to parse
+    Serial.print("{\"sensor\":\"MQ-2\",\"analog\":");
+    Serial.print(analogReading);
+    Serial.print(",\"digital\":");
+    Serial.print(digitalReading);
+    Serial.print(",\"alert\":");
+    Serial.print(alarmActive ? "true" : "false");
     Serial.println("}");
   }
-
-  (void)analogRaw; // Retained for optional telemetry and analog diagnostics.
 }
+
