@@ -169,12 +169,12 @@ PAGE = r'''<!doctype html>
 <style>
 :root{color-scheme:dark;--gold:#f2c94c;--bg:#080808;--panel:#121212;--line:#292929;--muted:#a4a4a4}
 *{box-sizing:border-box}body{margin:0;background:radial-gradient(ellipse at 50% -20%,#29230d 0,transparent 48%),var(--bg);color:#f7f7f7;font:16px system-ui,-apple-system,sans-serif;min-height:100vh;display:grid;place-items:center;padding:22px}
-main{width:min(780px,100%)}header{display:flex;align-items:center;gap:13px;margin-bottom:24px}.mark{width:48px;height:48px;border-radius:15px;background:var(--gold);color:#151515;display:grid;place-items:center;font-weight:950;font-size:22px}h1{margin:0;color:var(--gold);font-size:clamp(24px,5vw,34px)}.sub{color:var(--muted);font-size:14px;margin-top:3px}.pill{margin-left:auto;border:1px solid var(--line);border-radius:99px;padding:7px 11px;font-size:12px;color:var(--muted);white-space:nowrap}.dot{display:inline-block;width:7px;height:7px;border-radius:50%;background:#777;margin-right:6px}section{border:1px solid var(--line);border-radius:24px;background:linear-gradient(145deg,#171717,#0e0e0e);padding:clamp(20px,5vw,34px);box-shadow:0 20px 70px #0008}.eyebrow{color:var(--muted);font-size:12px;text-transform:uppercase;letter-spacing:2px}.status{font-size:clamp(38px,10vw,64px);font-weight:850;letter-spacing:1px;margin:12px 0 4px;line-height:1.05}.detail{color:var(--muted);font-size:14px}.grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin-top:26px}.tile{background:#191919;border:1px solid #282828;border-radius:16px;padding:16px;min-width:0}.label{font-size:12px;color:var(--muted);margin-bottom:8px}.value{font-weight:700;font-size:18px;overflow-wrap:anywhere}.foot{font-size:12px;line-height:1.55;color:var(--muted);margin:20px 2px 0}.gold{color:var(--gold)}.red{color:#ff6262}.green{color:#66df93}.yellow{color:var(--gold)}@media(max-width:520px){body{padding:14px}.pill{font-size:10px;padding:6px 8px}.grid{grid-template-columns:1fr 1fr}.tile:last-child{grid-column:1/-1}.value{font-size:16px}}
+main{width:min(780px,100%)}header{display:flex;align-items:center;gap:13px;margin-bottom:24px}.mark{width:48px;height:48px;border-radius:15px;background:var(--gold);color:#151515;display:grid;place-items:center;font-weight:950;font-size:22px}h1{margin:0;color:var(--gold);font-size:clamp(24px,5vw,34px)}.sub{color:var(--muted);font-size:14px;margin-top:3px}.pill{margin-left:auto;border:1px solid var(--line);border-radius:99px;padding:7px 11px;font-size:12px;color:var(--muted);white-space:nowrap}.dot{display:inline-block;width:7px;height:7px;border-radius:50%;background:#777;margin-right:6px}section{border:1px solid var(--line);border-radius:24px;background:linear-gradient(145deg,#171717,#0e0e0e);padding:clamp(20px,5vw,34px);box-shadow:0 20px 70px #0008}.eyebrow{color:var(--muted);font-size:12px;text-transform:uppercase;letter-spacing:2px}.status{font-size:clamp(38px,10vw,64px);font-weight:850;letter-spacing:1px;margin:12px 0 4px;line-height:1.05}.detail{color:var(--muted);font-size:14px}.grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin-top:26px}.tile{background:#191919;border:1px solid #282828;border-radius:16px;padding:16px;min-width:0}.label{font-size:12px;color:var(--muted);margin-bottom:8px}.value{font-weight:700;font-size:18px;overflow-wrap:anywhere}.foot{font-size:12px;line-height:1.55;color:var(--muted);margin:20px 2px 0}.gold{color:var(--gold)}.red{color:#ff6262}.green{color:#66df93}.yellow{color:var(--gold)}.actions{display:flex;justify-content:flex-end;margin-top:18px}.shutdown{border:1px solid #713535;border-radius:12px;background:#291313;color:#ffb6b6;font:inherit;font-weight:700;padding:12px 16px;cursor:pointer}.shutdown:disabled{opacity:.55;cursor:wait}.shutdown-note{font-size:12px;color:var(--muted);margin-top:10px;text-align:right}@media(max-width:520px){body{padding:14px}.pill{font-size:10px;padding:6px 8px}.grid{grid-template-columns:1fr 1fr}.tile:last-child{grid-column:1/-1}.value{font-size:16px}}
 </style></head><body><main>
 <header><div class="mark">+</div><div><h1>CGL+ LabZ</h1><div class="sub">SkillExpo · MQ-2 gas and smoke prototype</div></div><div class="pill"><span class="dot" id="dot"></span><span id="link">Connecting</span></div></header>
 <section><div class="eyebrow">Live sensor status</div><div class="status yellow" id="status">CONNECTING</div><div class="detail" id="detail">Waiting for live Arduino readings…</div>
 <div class="grid"><div class="tile"><div class="label">MQ-2 analog output (AO)</div><div class="value" id="ao">— / 1023</div><div class="detail" id="aoPct">Raw ADC reading</div></div><div class="tile"><div class="label">MQ-2 digital output (DO)</div><div class="value" id="raw">—</div></div><div class="tile"><div class="label">LED status</div><div class="value" id="led">—</div></div><div class="tile"><div class="label">Outputs</div><div class="value" id="outputs">—</div></div></div>
-<p class="foot">AO is a raw 10-bit ADC reading (0–1023), not calibrated concentration, ppm, or certified AQI. DO reflects the module's adjustable digital threshold. The MQ-2 module needs proper sensor conditioning. Do not use this prototype as a life-safety alarm.</p></section>
+<p class="foot">AO is a raw 10-bit ADC reading (0–1023), not calibrated concentration, ppm, or certified AQI. DO reflects the module's adjustable digital threshold. The MQ-2 module needs proper sensor conditioning. Do not use this prototype as a life-safety alarm.</p><div class="actions"><button class="shutdown" id="shutdown" type="button">Shut Down Raspberry Pi</button></div><div class="shutdown-note" id="shutdownNote">Safely powers off the Pi. The dashboard and Wi-Fi hotspot will disconnect.</div></section>
 <div class="foot">Local-only dashboard · <span class="gold">CGL+ LabZ</span></div>
 </main><script>
 const $=id=>document.getElementById(id);
@@ -189,11 +189,41 @@ $('led').textContent=(d.led||'—').toUpperCase();$('led').className='value '+(d
 $('outputs').textContent='Buzzer '+(d.buzzer?'ON':'OFF');
 if(!d.connected&&d.error)$('detail').textContent='Serial: '+d.error;
 }catch(e){$('link').textContent='Dashboard error';$('status').textContent='OFFLINE';$('status').className='status red';}}
+$('shutdown').addEventListener('click',async()=>{if(!confirm('Shut down the Raspberry Pi now? The dashboard and CGL+ AP will disconnect. You will need to press the Pi power button or reconnect power to start it again.'))return;const b=$('shutdown'),n=$('shutdownNote');b.disabled=true;b.textContent='Shutting down…';n.textContent='Shutdown requested. Keep the Pi connected to power until its activity light settles.';try{const r=await fetch('/api/shutdown',{method:'POST',headers:{'Content-Type':'application/json'}});const d=await r.json();if(!r.ok)throw Error(d.error||'Request failed');n.textContent='Shutdown accepted. This page will disconnect shortly.';}catch(e){n.textContent='Could not confirm shutdown: '+e.message+' — check the Pi before retrying.';b.disabled=false;b.textContent='Shut Down Raspberry Pi';}});
 refresh();setInterval(refresh,1000);
 </script></body></html>'''
 
 
 class Handler(BaseHTTPRequestHandler):
+    def do_POST(self):
+        path = self.path.split("?", 1)[0].rstrip("/") or "/"
+        if path != "/api/shutdown":
+            body = json.dumps({"error": "not found"}).encode()
+            self.send_response(404)
+        else:
+            # Reject cross-origin browser requests; this dashboard is intended for
+            # clients connected to the local, WPA-protected CGL+ AP.
+            origin = self.headers.get("Origin")
+            host = self.headers.get("Host", "")
+            if origin and origin not in (f"http://{host}", f"https://{host}"):
+                body = json.dumps({"error": "cross-origin request rejected"}).encode()
+                self.send_response(403)
+            else:
+                body = json.dumps({"ok": True, "message": "Shutdown accepted"}).encode()
+                self.send_response(202)
+                threading.Thread(target=self._poweroff, daemon=True, name="safe-poweroff").start()
+        self.send_header("Content-Type", "application/json")
+        self.send_header("Cache-Control", "no-store")
+        self.send_header("Content-Length", str(len(body)))
+        self.end_headers()
+        self.wfile.write(body)
+
+    @staticmethod
+    def _poweroff():
+        # Give the HTTP handler time to return its acknowledgement before poweroff.
+        time.sleep(2)
+        os.system("/usr/bin/systemctl poweroff")
+
     def do_GET(self):
         path = self.path.split("?", 1)[0].rstrip("/") or "/"
         if path == "/health":
