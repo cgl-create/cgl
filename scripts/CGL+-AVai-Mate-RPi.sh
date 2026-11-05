@@ -21,7 +21,7 @@ command -v apt-get >/dev/null 2>&1 || die "APT is required on Raspberry Pi OS."
 command -v curl >/dev/null 2>&1 || die "curl is required."
 install_agent() {
   apt-get update
-  DEBIAN_FRONTEND=noninteractive apt-get install -y python3 python3-venv ca-certificates curl avahi-daemon bluez
+  DEBIAN_FRONTEND=noninteractive apt-get install -y python3 python3-venv python3-dev build-essential libdbus-1-dev ca-certificates curl avahi-daemon bluez
   if apt-cache show python3-gpiozero >/dev/null 2>&1; then
     DEBIAN_FRONTEND=noninteractive apt-get install -y python3-gpiozero
   fi
