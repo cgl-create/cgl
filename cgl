@@ -251,6 +251,11 @@ update)
     fi
     exec "$path" update
   fi
+  if [ "${2:-}" = '-pkg' ] && [ "${3:-}" = 'avai-mate' ] && [ "${4:-}" = '-os' ] && [ "${5:-}" = 'rpi' ]; then
+    path="$CGL_ROOT/scripts/CGL+-AVai-Mate-RPi.sh"
+    [ -f "$path" ] || die 'AVai Mate Pi agent installer script is not installed'
+    exec "$path" update
+  fi
   if [ "${2:-}" = '-pkg' ] && [ "${3:-}" = 'rdp' ] && [ "${4:-}" = '-os' ] && [ "${5:-}" = '-ubuntu' ]; then
     path="$CGL_ROOT/scripts/CGL+-RDP-Ubuntu.sh"
     [ -f "$path" ] || die 'Ubuntu RDP setup script is not installed'
@@ -302,6 +307,11 @@ install)
   #   cgl install -revoke rdp -os rpi
   #   cgl install -rst rdp -os rpi
   #   cgl install -fix rdp -os rpi
+  if [ "$#" -eq 4 ] && [ "$2" = "avai-mate" ] && [ "$3" = "-os" ] && [ "$4" = "rpi" ]; then
+    path="$CGL_ROOT/scripts/CGL+-AVai-Mate-RPi.sh"
+    [ -f "$path" ] || die 'AVai Mate Pi agent installer script is not installed'
+    exec "$path" install
+  fi
   if [ "$#" -eq 2 ] && [ "$2" = "umbrel" ]; then
     path="$CGL_ROOT/scripts/CGL+-Umbrel.sh"
     [ -f "$path" ] || die 'Umbrel installer script is not installed'
