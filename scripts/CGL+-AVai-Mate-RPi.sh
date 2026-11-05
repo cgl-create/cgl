@@ -21,7 +21,7 @@ command -v apt-get >/dev/null 2>&1 || die "APT is required on Raspberry Pi OS."
 command -v curl >/dev/null 2>&1 || die "curl is required."
 install_agent() {
   apt-get update
-  DEBIAN_FRONTEND=noninteractive apt-get install -y python3 ca-certificates curl avahi-daemon bluez
+  DEBIAN_FRONTEND=noninteractive apt-get install -y python3 python3-venv ca-certificates curl avahi-daemon bluez
   if apt-cache show python3-gpiozero >/dev/null 2>&1; then
     DEBIAN_FRONTEND=noninteractive apt-get install -y python3-gpiozero
   fi
@@ -35,6 +35,10 @@ install_agent() {
   curl -fLsS --retry 3 --proto '=https' --tlsv1.2 "$RAW/avai-mate-pi.service" -o "$SERVICE.tmp"
   test -s "$SERVICE.tmp" || die "systemd unit download was empty."
   mv "$SERVICE.tmp" "$SERVICE"
+  if [ ! -x "$ROOT/venv/bin/python" ]; then
+    /usr/bin/python3 -m venv "$ROOT/venv"
+  fi
+  "$ROOT/venv/bin/python" -m pip install --disable-pip-version-check --upgrade bluez-peripheral
   chmod 0755 "$ROOT/agent.py"
   chmod 0644 "$SERVICE"
   if [ ! -s "$ETC/admin.pin" ]; then
@@ -58,7 +62,7 @@ install_agent() {
 EOF
     chmod 0600 "$ETC/config.json"
   fi
-  /usr/bin/python3 -m py_compile "$ROOT/agent.py" || die "Pi agent Python syntax validation failed."
+  "$ROOT/venv/bin/python" -m py_compile "$ROOT/agent.py" || die "Pi agent Python syntax validation failed."
   systemctl enable --now avahi-daemon
   if systemctl list-unit-files bluetooth.service >/dev/null 2>&1; then
     systemctl enable --now bluetooth.service 2>/dev/null || true
