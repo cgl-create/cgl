@@ -142,3 +142,12 @@ The Debian-family CGL+ repository is signed and published at `https://packages.c
 ## QMLE by CGL+
 
 Install QMLE with `cgl install qmle`, update it with `cgl install -update qmle`, or remove its launcher and application files with `cgl install -revoke qmle`. QMLE keeps local key files under `~/.config/qmle/` so removing the app does not silently destroy the ability to decrypt previously encrypted content.
+
+
+## CGL+ AVai Mate Raspberry Pi body agent
+
+Install the AVai Mate companion service on Raspberry Pi OS with:
+
+    sudo cgl install avai-mate -os rpi
+
+This package is intentionally available through the CLI installer without adding it to the short `cgl help` command list. It installs the local Pi dashboard and authenticated phone API, BLE GATT support, and the outbound Cloudflare D1 command-queue client. The local dashboard is available at `http://<pi-hostname>.local:8765` on the same LAN. The motor driver defaults to mock mode and remains disarmed until configured locally. See the [AVai Mate Pi setup guide](https://github.com/cgl-create/CGL-Labratories-AVai-Mate/blob/main/pi/README.md).
