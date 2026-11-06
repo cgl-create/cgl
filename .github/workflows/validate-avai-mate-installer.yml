@@ -1,0 +1,37 @@
+name: Validate CGL+ AVai Mate installer
+
+on:
+  push:
+    branches: ["main"]
+  pull_request:
+    branches: ["main"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check shell syntax
+        run: |
+          sh -n cgl
+          sh -n install.sh
+          sh -n scripts/CGL+-AVai-Mate-RPi.sh
+          sh -n scripts/build-deb.sh
+      - name: Confirm hidden installer route
+        run: |
+          grep -F 'CGL+-AVai-Mate-RPi.sh' cgl
+          sh cgl help > /tmp/cgl-help.txt
+          if grep -qi 'avai-mate' /tmp/cgl-help.txt; then
+            echo "AVai Mate must remain out of cgl help."
+            exit 1
+          fi
+      - name: Confirm Debian package includes the installer
+        run: |
+          grep -F 'CGL+-AVai-Mate-RPi.sh' scripts/build-deb.sh
+      - name: Confirm bootstrap installs bundled scripts
+        run: |
+          grep -F 'cp "$SRC"/scripts/*.sh' install.sh
